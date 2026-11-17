@@ -123,7 +123,15 @@ input, textarea, select { background: #fff; border-color: var(--input-line); col
 .section-hero h1 { font-size: clamp(31px,8.5vw,48px); line-height: 1.02; text-wrap: wrap; }
 .section-hero > p { color: var(--muted); font-weight: 600; font-size: 14px; margin-top: 5px; }
 .section-action { margin-top: 9px; }
-.hero.floodlights { min-height: clamp(205px,48vw,314px); color: white; }
+.hero.floodlights {
+  min-height: clamp(174px, 27vw, 244px);
+  grid-template-columns: minmax(0, 1fr) clamp(90px, 26vw, 163px);
+  padding: clamp(12px, 2.2vw, 20px);
+  color: white;
+}
+.hero.floodlights h1 { font-size: clamp(27px, 6.8vw, 56px); }
+.hero.floodlights .profile-shirt { width: 100%; margin-left: 0; }
+.hero.floodlights .kit-home-actions { gap: 0 14px; }
 .hero.floodlights h1 { color: #fff; }
 .hero.floodlights h1 em { color: var(--lime); }
 .hero.floodlights .hero-label, .hero.floodlights .kit-profile-action { color: #edffc5; }

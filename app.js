@@ -241,13 +241,14 @@ function revealCoachUpdate(update,target){
 function playerKit(linkToProfile=false){
  const profile=state.profiles[playerName];
  const update=linkToProfile?latestCoachUpdate():null;
- const badges=kitPathwayBadges(linkToProfile);
- const separateLinks=Boolean(update||badges);
+ const badges=kitPathwayBadges();
+ const browse=linkToProfile&&!badges&&firstPathway()?'<a class="kit-profile-action" href="#pathways">Explore rugby pathways '+icon('arrow',15)+'</a>':'';
+ const separateLinks=Boolean(update||badges||browse);
  const profileLink=linkToProfile&&separateLinks?'<a class="kit-profile-action" href="#profile" aria-label="View profile for Eli Morgan">View profile '+icon('arrow',15)+'</a>':
   linkToProfile?'<span class="kit-profile-action">View profile '+icon('arrow',15)+'</span>':'';
  const cue=update?'<a class="kit-coach-update" href="#'+coachUpdatePath(update)+'">'+icon('chat',15)+' New coach update '+icon('arrow',14)+'</a>':'';
  const content='<div class="kit-copy"><div class="eyebrow hero-label">NOTTINGHAM CORSAIRS · U14</div><h1>Eli <em>Morgan</em></h1><p class="kit-position">'+e(profile.focus||'Position to discuss')+'</p>'+
-  (linkToProfile&&separateLinks?'<div class="kit-home-actions">'+profileLink+cue+'</div>':profileLink)+'</div>'+shirtGraphic(profile.shirt)+badges;
+  (linkToProfile&&separateLinks?'<div class="kit-home-actions">'+profileLink+browse+cue+'</div>':profileLink)+'</div>'+shirtGraphic(profile.shirt)+badges;
  return linkToProfile&&!separateLinks
   ?'<a class="hero profile-hero player-kit floodlights kit-profile-link" href="#profile" aria-label="View profile for Eli Morgan">'+content+'</a>'
   :'<section class="hero profile-hero player-kit'+(linkToProfile?' floodlights':'')+'">'+content+'</section>';
@@ -270,8 +271,8 @@ function today(){
  todayTile('one-to-one','flag','1:1 coaching','coaching-tile')+
  todayTile('gym','train','Strength & conditioning','gym-tile strength-tile')+
  todayTile('skills','trend','Skills','skills-tile')+
- todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+homePathwayInterest()+
- (firstPathway()?'<div class="actions home-quick-links"><a class="text-link" href="#pathways">Explore rugby pathways '+icon('arrow',16)+'</a></div>':'')+foot();
+ todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+
+ (activePathways().some(([key])=>pathwayStatus(pathwayRecord(playerName,key)))?'<div class="actions home-quick-links"><a class="text-link" href="#pathways">Explore rugby pathways '+icon('arrow',16)+'</a></div>':'')+foot();
 }
 function playerCoachSnapshot(name){
  const reviews=playerHistory(name);
@@ -1538,27 +1539,14 @@ function playerPathwayUpdates(){
  });
  return updates.length?'<section class="stack home-pathway-updates" aria-label="New pathway updates">'+updates.join('')+'</section>':'';
 }
-function kitPathwayBadges(home){
+function kitPathwayBadges(){
  const links=activePathways().flatMap(([key,pathway])=>{
   const record=pathwayRecord(playerName,key),status=pathwayStatus(record);
   if(!status)return [];
-  if(home){
-   if(!pathwayHasProgress(status)||record.statusSeen!==status)return [];
-   const feedback=pathwayFeedback(key,record);
-   if(feedback&&(record.feedbackSeen??0)<(record.feedbackVersion??1))return [];
-  }
   return ['<a class="kit-pathway-badge '+status+'" href="#pathways/'+key+'">'+pathwayMark(key,pathway.title)+
    '<span><strong>'+e(pathway.title)+'</strong>'+pathwayStatusLabel(status)+'</span></a>'];
  });
  return links.length?'<nav class="kit-pathway-badges" aria-label="Your pathways">'+links.join('')+'</nav>':'';
-}
-function homePathwayInterest(){
- const pending=activePathways().filter(([key])=>{
-  const record=pathwayRecord(playerName,key);
-  return pathwayStatus(record)==='interested';
- });
- return pending.length?'<div class="actions home-pathway-interest">'+pending.map(([key,pathway])=>
-  '<a class="secondary" href="#pathways/'+key+'">'+e(pathway.title)+' · Interest sent</a>').join('')+'</div>':'';
 }
 function pathwayStatus(record){
  if(record.joinedOn)return 'accepted';
