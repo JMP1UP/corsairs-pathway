@@ -1049,11 +1049,13 @@ const overdue=name=>{const date=activeTarget(name)?.review;return /^\d{4}-\d{2}-
 const queueFor=name=>{
  const count=pendingLogs(name).length,due=overdue(name),request=oneRequest(name),plan=onePlan(name);
  const feedbackDue=Boolean(plan?.date&&plan.date<londonToday());
- const pathways=activePathways().map(([key])=>key).filter(key=>{
-  const record=pathwayRecord(name,key);
-  return pathwayStatus(record)==='interested';
- });
- return {count,due,request,feedbackDue,pathways,needed:Boolean(count||due||request||feedbackDue||pathways.length)};
+ const pathways=[],applications=[];
+ for(const [key,pathway] of activePathways()){
+  const status=pathwayStatus(pathwayRecord(name,key));
+  if(status==='interested')pathways.push({key,title:pathway.title});
+  if(status==='applying')applications.push({key,title:pathway.title});
+ }
+ return {count,due,request,feedbackDue,pathways,applications,needed:Boolean(count||due||request||feedbackDue||pathways.length)};
 };
 function coachHome(){
  const rows=Object.keys(roster).map((name,i)=>({name,i,...queueFor(name)})).sort((a,b)=>Number(b.needed)-Number(a.needed)||Number(Boolean(b.request))-Number(Boolean(a.request))||Number(b.feedbackDue)-Number(a.feedbackDue)||Number(b.due)-Number(a.due)||b.pathways.length-a.pathways.length||b.count-a.count);
@@ -1067,18 +1069,21 @@ function squadPlayerCard(row){
  if(row.count)tasks.push({route:playerRoute,label:row.count===1?'Review session':'Review '+row.count+' sessions'});
  if(row.request)tasks.push({route:'coach-one/'+row.i,label:'Plan 1:1',detail:skillName(row.request)});
  if(row.feedbackDue)tasks.push({route:'coach-one/'+row.i+'/feedback',label:'Give 1:1 feedback'});
- for(const key of row.pathways){
-  const title=pathwayCatalog()[key].title;
+ for(const {key,title} of row.pathways){
   tasks.push({route:'coach-pathways/'+row.i+'/'+key,label:title+' interest'});
  }
  if(row.due)tasks.push({route:playerRoute+'/target',label:'Check target'});
  const action=task=>'<a class="squad-task" href="#'+task.route+'" aria-label="'+
  e(task.label+' for '+row.name+(task.detail?' · '+task.detail:''))+'">'+
  '<span>'+e(task.label)+(task.detail?' · '+e(task.detail):'')+'</span>'+icon('arrow',14)+'</a>';
+ const applications=row.applications.map(({key,title})=>
+  '<a class="squad-task squad-application" href="#coach-pathways/'+row.i+'/'+key+'" aria-label="'+
+  e(title+' · Applying for '+row.name)+'"><span>'+e(title)+' · Applying</span>'+icon('arrow',14)+'</a>').join('');
  return '<article class="card squad-player '+(row.needed?'due':'')+'">'+
  '<a class="squad-progress" href="#'+playerRoute+'"><div><h2 class="activity-name">'+e(row.name)+'</h2><p class="mini">'+e(profile.focus||'Position to discuss')+'</p></div>'+
  icon('arrow',16)+'</a>'+
- (tasks.length?'<div class="squad-actions" role="group" aria-label="Needs attention">'+tasks.map(action).join('')+'</div>':'')+'</article>';
+ (tasks.length?'<div class="squad-actions" role="group" aria-label="Needs attention">'+tasks.map(action).join('')+'</div>':'')+
+ (applications?'<div class="squad-actions" role="group" aria-label="Pathway applications">'+applications+'</div>':'')+'</article>';
 }
 function sessionResults(l){
  const p=state.plans.find(x=>x.id===l.plan);if(!p)return '';
@@ -1514,17 +1519,22 @@ function pathwayFeedback(key,record){
  const [id,title]=criterion;
  return {id,title,...record.progress[id]};
 }
+const pathwayHasProgress=status=>status==='applying'||status==='accepted';
 function playerPathwayUpdates(){
  const updates=activePathways().flatMap(([key,pathway])=>{
   const record=pathwayRecord(playerName,key);
+  const stage=pathwayStatus(record);
+  const statusUpdate=pathwayHasProgress(stage)&&record.statusSeen!==stage;
   const feedback=pathwayFeedback(key,record);
-  if(!feedback||(record.feedbackSeen??0)>=(record.feedbackVersion??1))return [];
-  return ['<a class="card home-pathway-update" href="#pathways/'+key+'"><span class="icon-tile">'+icon('chat',18)+'</span>'+
-   '<span><span class="eyebrow">New coach feedback</span><strong>'+e(pathway.title)+'</strong>'+
-   '<span class="mini">'+e(feedback.title+(feedback.stage?' · '+feedback.stage:''))+'</span>'+
-   (feedback.note?'<span class="pathway-note-preview">'+e(feedback.note)+'</span>':'')+'</span>'+icon('arrow',16)+'</a>'];
+  const feedbackUpdate=feedback&&(record.feedbackSeen??0)<(record.feedbackVersion??1);
+  if(!statusUpdate&&!feedbackUpdate)return [];
+  return ['<a class="card home-pathway-update" href="#pathways/'+key+'"><span class="icon-tile">'+icon(statusUpdate?'flag':'chat',18)+'</span>'+
+   '<span><span class="eyebrow">'+(statusUpdate?'Pathway update':'New coach feedback')+'</span><strong>'+e(pathway.title)+'</strong>'+
+   (statusUpdate?pathwayStatusLabel(stage):'')+
+   (feedbackUpdate?'<span class="mini">'+e(feedback.title+(feedback.stage?' · '+feedback.stage:''))+'</span>':'')+
+   (feedbackUpdate&&feedback.note?'<span class="pathway-note-preview">'+e(feedback.note)+'</span>':'')+'</span>'+icon('arrow',16)+'</a>'];
  });
- return updates.length?'<section class="stack home-pathway-updates" aria-label="New pathway feedback">'+updates.join('')+'</section>':'';
+ return updates.length?'<section class="stack home-pathway-updates" aria-label="New pathway updates">'+updates.join('')+'</section>':'';
 }
 function homePathwayInterest(){
  const pending=activePathways().filter(([key])=>{
@@ -1720,8 +1730,9 @@ function pathwayPage(key,coachIndex){
   '<a class="secondary" href="#'+route+'/'+id+'" '+(key===id?'aria-current="page"':'')+'>'+e(option.title)+'</a>').join('');
  const formAttrs=' data-key="'+key+'"'+(coach?' data-index="'+coachIndex+'"':'');
  const stage=pathwayStatus(record);
- const status=!coach&&['applying','accepted'].includes(stage)?'<div class="pathway-player-status">'+pathwayStatusLabel(stage)+
-  (record.joinedOn?'<p class="mini">Confirmed '+e(dateText(record.joinedOn))+'</p>':'')+'</div>':'';
+ const status=!coach&&pathwayHasProgress(stage)?'<div class="pathway-player-status">'+pathwayStatusLabel(stage)+
+  (stage==='accepted'?'<p class="mini">Confirmed '+e(dateText(record.joinedOn))+'</p>':
+   '<p class="details">Your coach has marked your application as in progress. Ask them whether it’s been sent and what to do next.</p>')+'</div>':'';
  const interest=coach?coachPathwayPlace(key,coachIndex,record):record.joinedOn||record.applying?'':
   '<form id="pathway-interest" class="form"'+formAttrs+'>'+
   '<button class="'+(record.interested?'secondary':'primary')+'" aria-pressed="'+Boolean(record.interested)+'">'+
@@ -1771,11 +1782,11 @@ function submitPathway(form,submitter){
   let message;
   if(stage==='applying'&&!record.joinedOn){
    const applying=!record.applying;
-   savePathwayRecord(player,key,{applying});
+   savePathwayRecord(player,key,{applying,statusSeen:''});
    message=applying?'Marked as applying':'Applying status cleared';
   }else if(stage==='place'){
    const joinedOn=record.joinedOn?'':londonToday();
-   savePathwayRecord(player,key,{joinedOn});
+   savePathwayRecord(player,key,{joinedOn,statusSeen:''});
    message=joinedOn?'Place confirmed':'Confirmation removed';
   }else return;
   render();
@@ -1853,8 +1864,10 @@ function render(focus=false){
   const key=arg??firstPathway();
   if(isActivePathway(key)){
    const record=pathwayRecord(playerName,key);
-   const version=record.feedbackVersion??1;
-   if(pathwayFeedback(key,record)&&(record.feedbackSeen??0)<version)savePathwayRecord(playerName,key,{feedbackSeen:version});
+   const version=record.feedbackVersion??1,stage=pathwayStatus(record),seen={};
+   if(pathwayFeedback(key,record)&&(record.feedbackSeen??0)<version)seen.feedbackSeen=version;
+   if(pathwayHasProgress(stage)&&record.statusSeen!==stage)seen.statusSeen=stage;
+   if(Object.keys(seen).length)savePathwayRecord(playerName,key,seen);
   }
  }
  if(name==='profile'&&origin&&!['row','highlight'].includes(arg)){

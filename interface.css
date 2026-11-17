@@ -319,3 +319,7 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .pathway-status.accepted { color: #fff; background: #11543b; border-color: #11543b; }
 .pathway-player-status { margin-top: 10px; }
 .pathway-place-actions { display: flex; flex-wrap: wrap; gap: 5px 8px; }
+
+.squad-task.squad-application { background: #eaf4ed; color: #174d39; }
+.squad-task.squad-application:hover { background: #dceee2; }
+.home-pathway-update .pathway-status { margin-block: 3px; }
