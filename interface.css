@@ -323,3 +323,7 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .squad-task.squad-application { background: #eaf4ed; color: #174d39; }
 .squad-task.squad-application:hover { background: #dceee2; }
 .home-pathway-update .pathway-status { margin-block: 3px; }
+
+.home-pathway-status-links { display: flex; flex-wrap: wrap; gap: 0 16px; margin-top: 6px; }
+.home-pathway-status-links .text-link { min-height: 44px; max-width: 100%; overflow-wrap: anywhere; }
+.home-pathway-status-links .text-link svg { flex: none; }
