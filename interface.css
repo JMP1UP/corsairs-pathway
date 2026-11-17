@@ -347,3 +347,25 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
   border-right: 1.5px solid currentColor;
   transform: rotate(45deg);
 }
+
+.coach-player-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.coach-player-tabs a { font-size: 12px; }
+.squad-activity { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px; border-top:1px solid var(--line); padding:5px 1px; color:var(--green); font-size:13px; }
+.squad-activity .mini { display:block; }
+.squad-activity svg { flex:none; }
+.squad-player[hidden] { display:none; }
+.coach-assignment-list { margin:0; padding:0; list-style:none; }
+.coach-assignment-list li { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px; padding:8px 0; }
+.coach-assignment-list li + li { border-top:1px solid var(--line); }
+.coach-log .coach-log-state { display:block; margin-top:2px; }
+.activity-month + .activity-month { margin-top:4px; }
+.activity-month .mini { margin-inline-start:4px; }
+.home-latest-progress {
+ display:flex; align-items:center; justify-content:space-between; gap:8px;
+ min-height:44px; margin-top:12px; padding:6px 2px; border-bottom:1px solid var(--line); color:var(--green);
+}
+.home-latest-progress span { display:block; overflow-wrap:anywhere; }
+.home-latest-progress svg { flex:none; }
+
+.history-filters [aria-current="page"] { background:var(--mint); border-color:var(--green); box-shadow:inset 0 -2px var(--green); }
+.training-log-row:focus { outline:2px solid var(--green); outline-offset:2px; }

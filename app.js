@@ -253,10 +253,9 @@ function playerKit(linkToProfile=false){
   ?'<a class="hero profile-hero player-kit floodlights kit-profile-link" href="#profile" aria-label="View profile for Eli Morgan">'+content+'</a>'
   :'<section class="hero profile-hero player-kit'+(linkToProfile?' floodlights':'')+'">'+content+'</section>';
 }
-function homeAssignedPack(){
- const priorPack=plan=>Object.values(trainingPacks).some(pack=>plan.title===pack.title&&plan.category===pack.category&&plan.description===pack.description);
- const logged=new Set(playerLogs(playerName).filter(log=>log.status!=='skipped').map(log=>log.plan));
- const next=ownPlans().find(plan=>!plan.preset&&!logged.has(plan.id)&&(plan.packId||priorPack(plan)));
+function homeAssignedSession(){
+ const logged=playerActivity(playerName).recorded;
+ const next=nextTraining(ownPlans()).find(plan=>!plan.preset&&!plan.personal&&!logged.has(plan.id));
  if(!next)return '';
  return '<a class="home-target home-assignment" href="#'+sessionPath(next,'today','new')+'">'+
   '<span class="icon-tile">'+icon('bolt',18)+'</span><span class="home-target-copy"><strong>Assigned by your coach</strong>'+
@@ -266,12 +265,12 @@ function today(){
  const {next}=playerCoachSnapshot(playerName);
  const work=next?'<a class="home-target" href="#profile/target"><span class="icon-tile">'+icon('flag',18)+'</span>'+
  '<span class="home-target-copy"><strong>Work on next</strong><span>'+e(next)+'</span></span>'+icon('arrow',16)+'</a>':'';
- return playerKit(true)+homeAssignedPack()+work+
+ return playerKit(true)+homeAssignedSession()+work+
  playerPathwayUpdates()+'<nav class="section today-tiles" aria-label="Player sections">'+
  todayTile('one-to-one','flag','1:1 coaching','coaching-tile')+
  todayTile('gym','train','Strength & conditioning','gym-tile strength-tile')+
  todayTile('skills','trend','Skills','skills-tile')+
- todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+
+ todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+homeLatestProgress()+
  (activePathways().some(([key])=>pathwayStatus(pathwayRecord(playerName,key)))?'<div class="actions home-quick-links"><a class="text-link" href="#pathways">Explore rugby pathways '+icon('arrow',16)+'</a></div>':'')+foot();
 }
 function playerCoachSnapshot(name){
@@ -281,7 +280,7 @@ function playerCoachSnapshot(name){
   .sort((a,b)=>(b.savedAt??0)-(a.savedAt??0)||(b.observedOn??'').localeCompare(a.observedOn??''));
  return {
   reviews,focus,target,praises,
-  positive:praises[0]?.body||(reviews.some(r=>r.id==='welcome')?welcomePraise:''),
+  positive:praises[0]?.body||(reviews.length===1&&reviews[0].id==='welcome'?welcomePraise:''),
   praiseSkill:praises[0]?.factors?.[0]?.aspect,
   next:focus?.note||target?.goal
  };
@@ -291,10 +290,11 @@ function profileCoachSummary(name){
  if(!next&&!positive)return '';
  const extraSkills=[...new Set(praises.flatMap(note=>(note.factors??[]).map(f=>f.aspect)))]
   .filter(skill=>skill!==praiseSkill&&Object.hasOwn(factors,skill)).slice(0,3);
+ const relatedNote=!focus&&target?.context==='1:1 coaching'&&target.body&&target.body!==next?'<p class="mini">From your 1:1</p><p>'+e(target.body)+'</p>':'';
  const checkIn=!focus&&target?.review?'<p class="mini">Check in: '+e(dateText(target.review))+'</p>':'';
  const work=next?'<div class="profile-coach-work" id="profile-target" tabindex="-1">'+
   '<h3>Work on next</h3><p class="profile-coach-target">'+e(next)+'</p>'+
-  (focus?'<p class="mini">'+e(skillName(focus.skill))+'</p>':'')+checkIn+'</div>':'';
+  (focus?'<p class="mini">'+e(skillName(focus.skill))+'</p>':'')+relatedNote+checkIn+'</div>':'';
  const praise=positive&&positive!==next?'<div class="profile-coach-praise"><h3>What went well</h3>'+
   (praiseSkill?'<p class="mini">'+e(skillName(praiseSkill))+'</p>':'')+'<p>'+e(positive)+'</p>'+
   (extraSkills.length?'<div class="skill-shortcuts">'+extraSkills.map(skill=>skillShortcut(skill,'profile-highlight')).join('')+'</div>':'')+
@@ -498,27 +498,47 @@ function trainingTabs(active){
  return '<nav class="gym-tabs" aria-label="Strength and conditioning sections">'+tabs.map(([key,label,path])=>
   '<a class="gym-tab" href="#'+path+'" '+(key===active?'aria-current="page"':'')+'>'+e(label)+'</a>').join('')+'</nav>';
 }
+function sharedSessionHistory(entries,plans,filter='all',selectedId){
+ const isType=(plan,type)=>type==='all'||(type==='gym'?isGym(plan):isFitness(plan));
+ if(!['all','gym','fitness'].includes(filter))filter='all';
+ const visible=entries.filter(log=>isType(plans.find(plan=>plan.id===log.plan),filter));
+ const origin=filter==='all'?'gym-history':'gym-history-'+filter;
+ const groups=logMonths(visible).map(([month,logs],i)=>{
+  const rows=logs.map(log=>{
+   const plan=plans.find(item=>item.id===log.plan);
+   return '<a class="training-log-row" data-history-log="'+e(log.id)+'" href="#'+sessionPath(plan,origin,log.id)+'">'+
+    '<span><strong>'+e(plan.title)+'</strong><small>'+e((isGym(plan)?'Gym':'Speed & fitness')+' · '+
+    (Number.isFinite(log.at)?resultLoggedAt.format(log.at):'Date unavailable')+' · '+playerLogLabel(plan,log))+'</small></span>'+icon('arrow',15)+'</a>';
+  }).join('');
+  return monthDisclosure(month,logs.length,rows,i===0||logs.some(log=>log.id===selectedId));
+ }).join('');
+ const filters=[['all','All'],['gym','Gym'],['fitness','Speed & fitness']];
+ return '<section class="section training-history"><h2 class="section-title" id="session-history-title">Session history</h2>'+
+  '<nav class="actions history-filters" aria-label="Filter session history">'+filters.map(([id,label])=>
+   '<a class="secondary" '+(id===filter?'aria-current="page" ':'')+'href="#gym/history/'+id+'">'+label+'</a>').join('')+'</nav>'+
+  (groups?'<div class="stack section">'+groups+'</div>':
+   '<div class="card history-empty section"><p>'+ (entries.length?'No sessions logged in this category.':'No sessions logged yet.')+'</p>'+
+    '<a class="text-link" href="#'+(filter==='fitness'?'fitness':'gym')+'">Choose a session '+icon('arrow',15)+'</a></div>')+
+  (entries.length?'<div class="actions">'+
+   (entries.some(log=>isGym(plans.find(plan=>plan.id===log.plan)))?'<a class="secondary" href="#training-results/gym">Gym progress '+icon('arrow',15)+'</a>':'')+
+   (entries.some(log=>plans.find(plan=>plan.id===log.plan)?.category==='Speed')?'<a class="secondary" href="#training-results/fitness/history">Sprint progress '+icon('arrow',15)+'</a>':'')+
+   '</div>':'')+'</section>';
+}
 function sessionHistory(entries,plans,origin){
- const sharedHistory=origin==='gym-history';
- const types=new Set(entries.map(log=>isGym(plans.find(plan=>plan.id===log.plan))?'gym':'fitness'));
  const rows=entries.map(log=>{
   const plan=plans.find(item=>item.id===log.plan);
   return '<a class="training-log-row" href="#'+sessionPath(plan,origin,log.id)+'"><span><strong>'+e(plan.title)+'</strong>'+
-   '<small>'+(sharedHistory?(isGym(plan)?'Gym':'Speed &amp; fitness')+' · ':'')+e(resultLoggedAt.format(log.at))+' · '+e(playerLogLabel(plan,log))+'</small></span>'+icon('arrow',15)+'</a>';
+   '<small>'+e(resultLoggedAt.format(log.at))+' · '+e(playerLogLabel(plan,log))+'</small></span>'+icon('arrow',15)+'</a>';
  });
  return '<section class="section training-history" aria-labelledby="session-history-title">'+
   '<div class="section-head"><h2 class="section-title" id="session-history-title">Session history</h2>'+
   (rows.length?'<span class="mini">'+rows.length+' '+(rows.length===1?'log':'logs')+'</span>':'')+'</div>'+
   (rows.length?'<div class="stack training-log-list">'+rows.slice(0,3).join('')+'</div>'+
-   (rows.length>3?fold('Earlier logs ('+(rows.length-3)+')','<div class="stack training-log-list">'+rows.slice(3).join('')+'</div>','section'):'')+
-   (sharedHistory?'<div class="actions">'+
-    (types.has('gym')?'<a class="secondary" href="#training-results/gym">Gym progress '+icon('arrow',15)+'</a>':'')+
-    (types.has('fitness')?'<a class="secondary" href="#training-results/fitness/history">Sprint progress '+icon('arrow',15)+'</a>':'')+
-    '</div>':''):
+   (rows.length>3?fold('Earlier logs ('+(rows.length-3)+')','<div class="stack training-log-list">'+rows.slice(3).join('')+'</div>','section'):''):
    '<div class="card history-empty"><p>No sessions logged yet.</p><a class="text-link" href="#gym">Choose a gym session '+icon('arrow',15)+'</a></div>')+
   '</section>';
 }
-function train(view,subpage){
+function train(view,subpage,historyFilter,selectedLog){
  const gymView=view==='gym',fitnessView=view==='fitness',pitchView=view==='field';
  const origin=gymView?'gym':fitnessView?'fitness':pitchView?'field':'train';
  const onGymHistory=gymView&&subpage==='history';
@@ -527,7 +547,7 @@ function train(view,subpage){
  const title=pitchView?'Pitch sessions':gymView||fitnessView?'Strength & conditioning':'Training';
  const head=compactHeader(title,pitchView?'bolt':'train',pitchView?'skills-tile':'gym-tile')+
   (gymView||fitnessView?trainingTabs(fitnessView?'fitness':onGymHistory?'history':'sessions'):'');
- if(onGymHistory)return head+sessionHistory(logs,visible,'gym-history')+foot();
+ if(onGymHistory)return head+sharedSessionHistory(logs,visible,historyFilter,selectedLog)+foot();
  const personal=visible.filter(plan=>plan.personal);
  const presets=visible.filter(plan=>plan.preset);
  const assigned=visible.filter(plan=>!plan.personal&&!plan.preset);
@@ -544,7 +564,7 @@ function train(view,subpage){
    '<p class="mini gym-safety">Use weights with a qualified trainer supervising.</p></div>':'')+
   (!gymView&&!fitnessView&&logs.length?sessionHistory(logs,visible,origin):'')+foot();
 }
-function gym(subpage){return train('gym',subpage);}
+function gym(subpage,historyFilter,selectedLog){return train('gym',subpage,historyFilter,selectedLog);}
 function field(){return train('field');}
 function fitness(){return train('fitness');}
 const positionSelect=(name,value,label,empty='Not set')=>'<label>'+label+'<select name="'+name+'">'+opt('',value,empty)+Object.keys(positionTips).map(x=>opt(x,value)).join('')+'</select></label>';
@@ -776,22 +796,42 @@ function resultPlot(series,selectedId){
  return '<svg class="result-plot" viewBox="0 0 320 104" aria-hidden="true"><path class="result-grid" d="M49 29H300M49 55H300M49 81H300"/>'+scale+'<polyline points="'+line+'"/>'+dots+'</svg>'+
  (points.length===1?'<p class="mini">Log this again to see how it changes.</p>':'<div class="chart-dates" aria-hidden="true"><span>'+e(resultDate.format(points[0].at))+'</span><span>'+e(resultDate.format(points.at(-1).at))+'</span></div>');
 }
+function compareResults(unit,current,previous){
+ if(!previous)return 'First result';
+ const delta=Math.round((current.value-previous.value)*100)/100;
+ if(!delta)return 'Same as last time';
+ const direction=unit==='s'?(delta<0?'faster':'slower'):unit==='kg'?(delta>0?'heavier':'lighter'):(delta>0?'more':'fewer');
+ const amount=resultNumber.format(Math.abs(delta));
+ return unit==='reps'
+  ?amount+' '+direction+' '+(Math.abs(delta)===1?'rep':'reps')+' than last time'
+  :amount+' '+unit+' '+direction+' than last time';
+}
+function homeLatestProgress(){
+ const log=playerActivity(playerName).latest;
+ const plan=log&&ownPlans().find(item=>item.id===log.plan);
+ if(!plan)return '';
+ let title=plan.title,detail=playerLogLabel(plan,log),destination=sessionPath(plan,'today',log.id);
+ if(isGym(plan)||plan.category==='Speed'){
+  destination='results/'+log.id+'/today';
+  const {gym,sprint}=trainingResultGroups();
+  const series=[...(isGym(plan)?gym:sprint).values()].find(item=>item.points.some(point=>point.logId===log.id));
+  if(series){
+   const index=series.points.findIndex(point=>point.logId===log.id);
+   const current=series.points[index],previous=series.points[index+1];
+   title=series.label;
+   detail=resultNumber.format(current.value)+' '+series.unit+(previous?' · '+compareResults(series.unit,current,previous):'');
+  }
+ }
+ return '<a class="home-latest-progress" href="#'+destination+'"><span>'+
+  '<span class="mini">Latest progress · '+e(resultDate.format(log.at))+'</span>'+
+  '<strong>'+e(title)+'</strong><span class="mini">'+e(detail)+'</span></span>'+icon('arrow',15)+'</a>';
+}
 function resultCard(series,index,selectedId){
  const selectedIndex=selectedId?series.points.findIndex(point=>point.logId===selectedId):-1;
  const currentIndex=Math.max(0,selectedIndex);
  const current=series.points[currentIndex],previous=series.points[currentIndex+1];
- const delta=previous?Math.round((current.value-previous.value)*100)/100:0;
  const timed=series.unit==='s';
- let comparison='First result';
- if(previous){
-  if(delta===0)comparison='Same as last time';
-  else{
-   const direction=timed?(delta<0?'faster':'slower'):series.unit==='kg'?(delta>0?'heavier':'lighter'):(delta>0?'more':'fewer');
-   comparison=series.unit==='reps'
-    ?resultNumber.format(Math.abs(delta))+' '+direction+' '+(Math.abs(delta)===1?'rep':'reps')+' than last time'
-    :resultNumber.format(Math.abs(delta))+' '+series.unit+' '+direction+' than last time';
-  }
- }
+ const comparison=compareResults(series.unit,current,previous);
  return '<article class="card result-card '+(timed?'speed-result':'gym-result')+'" data-result-series="'+index+'" '+(index?'hidden':'')+'>'+
  '<p class="mini">'+e(series.label)+'</p>'+(selectedIndex>=0?'<p class="current-attempt">This attempt</p>':'')+
  '<div class="result-stat"><strong>'+e(resultNumber.format(current.value))+'</strong> '+series.unit+'</div>'+
@@ -846,14 +886,14 @@ function partialGymSummary(plan,log){
  return missing.length?'<p class="mini partial-summary">'+missing.slice(0,3).map(e).join(' · ')+
   (missing.length>3?' · '+(missing.length-3)+' more in the log':'')+'</p>':'';
 }
-function savedResults(logId){
+function savedResults(logId,source){
  const log=playerLogs(playerName).find(entry=>entry.id===logId);
  const plan=log&&ownPlans().find(p=>p.id===log.plan);
  if(!plan)return notFound('gym');
  const {gym,sprint}=trainingResultGroups(), gymSession=isGym(plan);
  const groups=new Map([...(gymSession?gym:sprint)].filter(([,series])=>series.points.some(point=>point.logId===log.id)));
  const origin=sessionOrigin(plan);
- return back(origin,gymSession?'Back to Gym':'Back to Speed & fitness')+
+ return (source==='today'?back('today','Back to Home'):back(origin,gymSession?'Back to Gym':'Back to Speed & fitness'))+
  compactHeader(gymSession?'Gym results':'Sprint results',gymSession?'train':'bolt',gymSession?'gym-tile':'skills-tile',null,plan.title+' · '+resultLoggedAt.format(log.at))+
  '<div class="player-log-status">'+tag(playerLogLabel(plan,log),log.status==='partial'?'attention':'good')+partialGymSummary(plan,log)+'</div>'+
  '<section class="section">'+(groups.size?resultSection(gymSession?'gym-chart':'sprint-chart','Your graph',groups,'',log.id):
@@ -1013,7 +1053,8 @@ function session(id,origin,attempt){
  const gymSession=isGym(plan);
  const backRoute=['today','gym','field','fitness','train'].includes(origin)?origin:sessionOrigin(plan);
  const backLabel={today:'Home',gym:'Back to Gym',field:'Back to Pitch sessions',fitness:'Back to Speed & fitness',train:'Back to Training'}[backRoute];
- const returnLink=origin==='gym-history'?back('gym/history','Back to History'):back(backRoute,backLabel);
+ const historyFilter={ 'gym-history':'all','gym-history-gym':'gym','gym-history-fitness':'fitness' }[origin];
+ const returnLink=historyFilter?back('gym/history/'+historyFilter+(saved?'/'+saved.id:''),'Back to History'):back(backRoute,backLabel);
  return returnLink+compactHeader(plan.title,gymSession?'train':'bolt',gymSession?'gym-tile':'skills-tile',null,plan.personal?'My gym session':plan.duration+' min')+banner+
  (log?'<div class="stack section">'+list+'</div>':
  '<form id="session-form" class="stack section" data-id="'+id+'" data-draft="'+draftKey+'" data-edit="'+(editing?saved.id:'')+'">'+list+
@@ -1047,7 +1088,64 @@ function sessionActivity(plan,activity,entry,index,log){
 }
 
 const playerLogs=name=>Object.values(state.logs).reverse().filter(l=>l.player===name).sort((a,b)=>b.at-a.at);
-const pendingLogs=name=>playerLogs(name).filter(l=>l.status!=='skipped'&&!state.reviews.some(r=>r.logId===l.id));
+function coachPlayerActivity(name,index){
+ const activity=playerActivity(name);
+ const {logs,assignments,recorded}=activity;
+ const missing=assignments.filter(plan=>!recorded.has(plan.id));
+ const openAssignments=missing.map(plan=>
+  '<li><strong>'+e(plan.title)+'</strong><span class="mini">Due '+e(dateText(plan.when))+'</span></li>').join('');
+ const history=logMonths(logs).map(([month,entries],monthIndex)=>{
+  const rows=entries.map(log=>{
+   const review=state.reviews.find(note=>note.logId===log.id);
+   const status=log.status==='skipped'?'Skipped':hasTrainingRecord(log)?'Completed':'No result logged';
+   return '<details class="fold coach-log"><summary><span>'+attemptSummary(log)+
+    '<span class="mini coach-log-state">'+e([log.status==='partial'?'':status,review?'Reviewed':hasTrainingRecord(log)?'To review':''].filter(Boolean).join(' · '))+'</span></span></summary>'+
+    '<div class="fold-content">'+sessionResults(log)+
+    (review?'<p class="details">'+e(review.body)+'</p>':
+     hasTrainingRecord(log)?'<a class="text-link" href="#player/'+index+'/'+e(log.id)+'">Review this session '+icon('arrow',15)+'</a>':'')+
+    '</div></details>';
+  }).join('');
+  return monthDisclosure(month,entries.length,rows,monthIndex===0);
+ }).join('');
+ return '<section class="section coach-work"><h2 class="section-title block-title">Assignments due</h2>'+
+  '<p class="details">'+e(assignedLogSummary(activity))+'</p>'+
+  (openAssignments?fold('No result logged ('+missing.length+')','<ul class="coach-assignment-list">'+openAssignments+'</ul>','activity-assignments'):'')+
+  '</section><section class="section coach-work"><h2 class="section-title block-title">Session logs</h2>'+
+  (history?'<div class="stack">'+history+'</div>':'<p class="details">No sessions logged yet.</p>')+'</section>';
+}
+const hasTrainingRecord=log=>log.status==='done'||(log.status==='partial'&&log.items?.some(entry=>entry?.status==='done'));
+function playerActivity(name){
+ const logs=playerLogs(name);
+ const recorded=new Set(logs.filter(hasTrainingRecord).map(log=>log.plan));
+ const today=londonToday();
+ const assignments=state.plans.filter(plan=>!plan.personal&&!plan.preset&&
+  (plan.audience==='U14 squad'||plan.audience===name)&&
+  /^\d{4}-\d{2}-\d{2}$/.test(plan.when??'')&&plan.when<=today)
+  .sort((a,b)=>b.when.localeCompare(a.when));
+ const latest=logs.find(log=>hasTrainingRecord(log)&&Number.isFinite(log.at));
+ return {logs,recorded,assignments,latest};
+}
+function assignedLogSummary({assignments,recorded}){
+ if(!assignments.length)return 'No assignments due';
+ const logged=assignments.filter(plan=>recorded.has(plan.id)).length;
+ return logged+' of '+assignments.length+' due '+(assignments.length===1?'assignment':'assignments')+' logged';
+}
+const logMonthFormat=new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:'Europe/London'});
+function logMonths(logs){
+ const months=new Map();
+ for(const log of logs){
+  const label=Number.isFinite(log.at)?logMonthFormat.format(log.at):'Date unavailable';
+  if(!months.has(label))months.set(label,[]);
+  months.get(label).push(log);
+ }
+ return [...months];
+}
+function monthDisclosure(month,count,body,open,extra=''){
+ return '<details class="fold activity-month" '+(open?'open ':'')+extra+'><summary>'+
+  '<span>'+e(month)+' <small class="mini">'+count+' '+(count===1?'log':'logs')+'</small></span></summary>'+
+  '<div class="fold-content stack">'+body+'</div></details>';
+}
+const pendingLogs=name=>playerLogs(name).filter(l=>hasTrainingRecord(l)&&!state.reviews.some(r=>r.logId===l.id));
 const overdue=name=>{const date=activeTarget(name)?.review;return /^\d{4}-\d{2}-\d{2}$/.test(date??'')&&date<=londonToday();};
 const queueFor=name=>{
  const count=pendingLogs(name).length,due=overdue(name),request=oneRequest(name),plan=onePlan(name);
@@ -1061,9 +1159,11 @@ const queueFor=name=>{
  return {count,due,request,feedbackDue,pathways,applications,needed:Boolean(count||due||request||feedbackDue||pathways.length)};
 };
 function coachHome(){
- const rows=Object.keys(roster).map((name,i)=>({name,i,...queueFor(name)})).sort((a,b)=>Number(b.needed)-Number(a.needed)||Number(Boolean(b.request))-Number(Boolean(a.request))||Number(b.feedbackDue)-Number(a.feedbackDue)||Number(b.due)-Number(a.due)||b.pathways.length-a.pathways.length||b.count-a.count);
+ const rows=Object.keys(roster).map((name,i)=>({name,i,...queueFor(name),activity:playerActivity(name)})).sort((a,b)=>Number(b.needed)-Number(a.needed)||Number(Boolean(b.request))-Number(Boolean(a.request))||Number(b.feedbackDue)-Number(a.feedbackDue)||Number(b.due)-Number(a.due)||b.pathways.length-a.pathways.length||b.count-a.count);
  return '<h1 class="page-title">U14 squad</h1>'+
- '<div class="section stack">'+rows.map(squadPlayerCard).join('')+'</div>'+foot();
+ (rows.length>8?'<div class="section form"><label>Find a player<input type="search" data-squad-search autocomplete="off"></label></div>':'')+
+ '<div class="section stack">'+rows.map(squadPlayerCard).join('')+
+ '<p class="details" data-squad-no-matches hidden>No players match that name.</p></div>'+foot();
 }
 function squadPlayerCard(row){
  const profile=state.profiles[row.name];
@@ -1082,9 +1182,13 @@ function squadPlayerCard(row){
  const applications=row.applications.map(({key,title})=>
   '<a class="squad-task squad-application" href="#coach-pathways/'+row.i+'/'+key+'" aria-label="'+
   e(title+' · Applying for '+row.name)+'"><span>'+e(title)+' · Applying</span>'+icon('arrow',14)+'</a>').join('');
- return '<article class="card squad-player '+(row.needed?'due':'')+'">'+
+ const last=row.activity.latest;
+ const lastLabel=last?'Last logged '+resultDate.format(last.at):'No sessions logged yet';
+ return '<article class="card squad-player '+(row.needed?'due':'')+'" data-squad-name="'+e(row.name)+'">'+
  '<a class="squad-progress" href="#'+playerRoute+'"><div><h2 class="activity-name">'+e(row.name)+'</h2><p class="mini">'+e(profile.focus||'Position to discuss')+'</p></div>'+
  icon('arrow',16)+'</a>'+
+ '<a class="squad-activity" href="#'+playerRoute+'/activity" aria-label="'+e('Training activity for '+row.name+' · '+lastLabel+' · '+assignedLogSummary(row.activity))+'">'+
+ '<span><strong>'+e(lastLabel)+'</strong><span class="mini">'+e(assignedLogSummary(row.activity))+'</span></span>'+icon('arrow',14)+'</a>'+
  (tasks.length?'<div class="squad-actions" role="group" aria-label="Needs attention">'+tasks.map(action).join('')+'</div>':'')+
  (applications?'<div class="squad-actions" role="group" aria-label="Pathway applications">'+applications+'</div>':'')+'</article>';
 }
@@ -1094,7 +1198,7 @@ function sessionResults(l){
 }
 function attemptHighlight(plan,log){
  if(!plan)return names[log.status]||'Saved session';
- const entries=plan.items.map((activity,index)=>({activity,entry:log.items[index]}))
+ const entries=plan.items.map((activity,index)=>({activity,entry:log.items?.[index]}))
   .filter(({entry})=>entry?.status==='done');
  const sets=entries.flatMap(({activity,entry})=>activity.unit==='sets'?(entry.sets??[])
   .filter(set=>Number(set?.reps)>0).map(set=>({activity,set})):[]);
@@ -1119,7 +1223,8 @@ function attemptMeta(log){
 function attemptSummary(log){
  const plan=state.plans.find(p=>p.id===log.plan);
  return '<span class="mini">'+e(attemptMeta(log))+'</span><strong>'+e(plan?.title??'Session')+'</strong>'+
-  '<span class="attempt-result">'+e(attemptHighlight(plan,log))+'</span>';
+  '<span class="attempt-result">'+e(attemptHighlight(plan,log))+'</span>'+
+  (log.status==='partial'?'<span class="mini">Part completed</span>':'');
 }
 function coachAttemptPicker(logs,selected,index){
  if(!logs.length)return '';
@@ -1147,7 +1252,7 @@ function openCoachReview(index,attempt){
 }
 function coachPlayerTabs(index,active){
  const route='player/'+index;
- const tabs=[['feedback','Feedback',route],['target','Target',route+'/target'],['skills','Profile skills',route+'/profile-skills']];
+ const tabs=[['feedback','Feedback',route],['target','Target',route+'/target'],['skills','Profile skills',route+'/profile-skills'],['activity','Activity',route+'/activity']];
  return '<nav class="coach-player-tabs" aria-label="Player tools">'+tabs.map(([key,label,path])=>
   '<a class="secondary" href="#'+path+'" '+(active===key?'aria-current="page" ':'')+'>'+label+'</a>').join('')+'</nav>';
 }
@@ -1181,11 +1286,12 @@ function coachProfileSkillsPage(name){
 function staffPlayer(index,selected){
  const name=Object.keys(roster)[Number(index)];if(!name)return notFound('desk');
  const profile=state.profiles[name];
- const active=selected==='target'?'target':selected==='profile-skills'?'skills':'feedback';
+ const active=selected==='target'?'target':selected==='profile-skills'?'skills':selected==='activity'?'activity':'feedback';
  const header=back('desk','Back to Squad')+
   '<header class="coach-player-heading"><h1 class="page-title">'+e(name)+'</h1>'+
   (profile.focus?'<p class="mini">'+e(profile.focus)+'</p>':'')+'</header>'+coachPlayerTabs(index,active);
  if(active==='target')return header+coachTargetPanel(name)+foot();
+ if(active==='activity')return header+coachPlayerActivity(name,index)+foot();
  if(active==='skills')return header+coachProfileSkillsPage(name)+
   '<div class="actions"><a class="text-link" href="#position-plan/'+index+'">Edit positions '+icon('arrow',15)+'</a></div>'+foot();
  const history=playerHistory(name),logs=pendingLogs(name);
@@ -1870,6 +1976,11 @@ function render(focus=false){
   revealCoachUpdate(update,target);
  }
  if(name==='profile'&&arg==='row')restoreSkillRow(origin,'profile');
+ if(name==='gym'&&arg==='history'&&attempt){
+  const row=main.querySelector('[data-history-log="'+CSS.escape(attempt)+'"]');
+  row?.scrollIntoView({block:'center',behavior:'instant'});
+  row?.focus({preventScroll:true});
+ }
  if(name==='profile'&&arg==='highlight')restoreSkillRow(origin,'profile-highlight');
  if(['progress','skills'].includes(name)){
   if(arg==='row')restoreSkillRow(origin,'skills');
@@ -2018,6 +2129,13 @@ document.addEventListener('click',ev=>{
 });
 document.addEventListener('input',ev=>{
  const input=ev.target;
+ if(input.matches('[data-squad-search]')){
+  const query=input.value.trim().toLowerCase();
+  const rows=[...main.querySelectorAll('[data-squad-name]')];
+  for(const row of rows)row.hidden=!row.dataset.squadName.toLowerCase().includes(query);
+  main.querySelector('[data-squad-no-matches]').hidden=rows.some(row=>!row.hidden);
+  return;
+ }
  if(input.form?.id==='builder'&&input.name.startsWith('gym-reps')){
   input.form.querySelector('[data-missing-reps]').hidden=
    [...input.form.querySelectorAll('[name^="gym-reps"]')].every(field=>field.value);
