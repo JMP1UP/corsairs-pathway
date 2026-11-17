@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 190">
+ <rect width="540" height="190" rx="16" fill="#101e17"/>
+ <path d="M180 16v148M360 16v148" stroke="#395a47"/>
+ <g stroke="#d9ff66" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">
+  <path d="m83 59 4 38 5 27v23h-19m12-73-16 15-13 2"/>
+  <path d="m255 75 26 38-33 11 11 23h-19m22-61-17 6-21-8"/>
+  <path d="m443 59 4 38 5 27v23h-19m12-73-16 15-13 2"/>
+ </g>
+ <g fill="#d9ff66"><circle cx="81" cy="42" r="11"/><circle cx="245" cy="61" r="11"/><circle cx="441" cy="42" r="11"/></g>
+ <g fill="#42765d" stroke="#6e9a7b" stroke-width="2"><rect x="103" y="114" width="49" height="33" rx="3"/><rect x="276" y="114" width="49" height="33" rx="3"/><rect x="463" y="114" width="49" height="33" rx="3"/></g>
+ <g fill="#f6f8ed" font-family="sans-serif" font-size="14" font-weight="700" text-anchor="middle"><text x="90" y="174">1 · Set up</text><text x="270" y="174">2 · Touch the box</text><text x="450" y="174">3 · Stand tall</text></g>
+</svg>

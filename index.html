@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#004d39">
+<meta name="description" content="Corsairs U14 rugby development prototype. Train with a plan and see your progress.">
+<title>Nottingham Corsairs Pathway</title>
+<link rel="icon" href="corsairs-crest.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="interface.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main" data-jump="main">Skip to content</a>
+<div class="app">
+  <header class="mast">
+    <a class="brand" href="#today" aria-label="Corsairs Pathway home">
+      <img class="crest" src="corsairs-crest.png" width="47" height="47" alt="">
+      <span>NOTTINGHAM CORSAIRS <strong>PATHWAY</strong><small>U14 DEVELOPMENT</small></span>
+    </a>
+    <div class="switch" aria-label="Demo view">
+      <button type="button" data-role="player">Player</button><button type="button" data-role="coach">Coach</button>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <nav id="nav" aria-label="App navigation"></nav>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
