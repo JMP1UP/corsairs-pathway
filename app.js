@@ -266,11 +266,11 @@ function today(){
  const work=next?'<a class="home-target" href="#profile/target"><span class="icon-tile">'+icon('flag',18)+'</span>'+
  '<span class="home-target-copy"><strong>Work on next</strong><span>'+e(next)+'</span></span>'+icon('arrow',16)+'</a>':'';
  return playerKit(true)+homeAssignedSession()+work+
- playerPathwayUpdates()+'<nav class="section today-tiles" aria-label="Player sections">'+
+ playerPathwayUpdates()+homeLatestProgress()+'<nav class="section today-tiles" aria-label="Player sections">'+
  todayTile('one-to-one','flag','1:1 coaching','coaching-tile')+
  todayTile('gym','train','Strength & conditioning','gym-tile strength-tile')+
  todayTile('skills','trend','Skills','skills-tile')+
- todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+homeLatestProgress()+
+ todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+
  (activePathways().some(([key])=>pathwayStatus(pathwayRecord(playerName,key)))?'<div class="actions home-quick-links"><a class="text-link" href="#pathways">Explore rugby pathways '+icon('arrow',16)+'</a></div>':'')+foot();
 }
 function playerCoachSnapshot(name){
@@ -1092,8 +1092,10 @@ function coachPlayerActivity(name,index){
  const activity=playerActivity(name);
  const {logs,assignments,recorded}=activity;
  const missing=assignments.filter(plan=>!recorded.has(plan.id));
- const openAssignments=missing.map(plan=>
-  '<li><strong>'+e(plan.title)+'</strong><span class="mini">Due '+e(dateText(plan.when))+'</span></li>').join('');
+ const assignmentList=plans=>'<ul class="coach-assignment-list">'+plans.map(plan=>
+  '<li><strong>'+e(plan.title)+'</strong><span class="mini">Due '+e(dateText(plan.when))+'</span></li>').join('')+'</ul>';
+ const visibleMissing=missing.slice(0,4);
+ const earlierMissing=missing.slice(4);
  const history=logMonths(logs).map(([month,entries],monthIndex)=>{
   const rows=entries.map(log=>{
    const review=state.reviews.find(note=>note.logId===log.id);
@@ -1109,7 +1111,10 @@ function coachPlayerActivity(name,index){
  }).join('');
  return '<section class="section coach-work"><h2 class="section-title block-title">Assignments due</h2>'+
   '<p class="details">'+e(assignedLogSummary(activity))+'</p>'+
-  (openAssignments?fold('No result logged ('+missing.length+')','<ul class="coach-assignment-list">'+openAssignments+'</ul>','activity-assignments'):'')+
+  (missing.length?'<div class="card coach-missing"><h3 class="activity-name">No result logged ('+missing.length+')</h3>'+
+   assignmentList(visibleMissing)+
+   (earlierMissing.length?fold('Earlier assignments ('+earlierMissing.length+')',assignmentList(earlierMissing),'activity-assignments'):'')+
+   '</div>':'')+
   '</section><section class="section coach-work"><h2 class="section-title block-title">Session logs</h2>'+
   (history?'<div class="stack">'+history+'</div>':'<p class="details">No sessions logged yet.</p>')+'</section>';
 }
@@ -1183,7 +1188,7 @@ function squadPlayerCard(row){
   '<a class="squad-task squad-application" href="#coach-pathways/'+row.i+'/'+key+'" aria-label="'+
   e(title+' · Applying for '+row.name)+'"><span>'+e(title)+' · Applying</span>'+icon('arrow',14)+'</a>').join('');
  const last=row.activity.latest;
- const lastLabel=last?'Last logged '+resultDate.format(last.at):'No sessions logged yet';
+ const lastLabel=last?'Last result logged '+resultDate.format(last.at):'No training results logged';
  return '<article class="card squad-player '+(row.needed?'due':'')+'" data-squad-name="'+e(row.name)+'">'+
  '<a class="squad-progress" href="#'+playerRoute+'"><div><h2 class="activity-name">'+e(row.name)+'</h2><p class="mini">'+e(profile.focus||'Position to discuss')+'</p></div>'+
  icon('arrow',16)+'</a>'+
