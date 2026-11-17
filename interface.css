@@ -329,3 +329,13 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .kit-pathway-badge > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .kit-pathway-badge strong { font-weight: 800; }
 .kit-pathway-badge .pathway-status { margin-inline-start: 5px; }
+.kit-pathway-badge::after {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 2px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
