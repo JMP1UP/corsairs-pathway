@@ -241,12 +241,14 @@ function revealCoachUpdate(update,target){
 function playerKit(linkToProfile=false){
  const profile=state.profiles[playerName];
  const update=linkToProfile?latestCoachUpdate():null;
- const profileLink=update?'<a class="kit-profile-action" href="#profile" aria-label="View profile for Eli Morgan">View profile '+icon('arrow',15)+'</a>':
+ const badges=kitPathwayBadges(linkToProfile);
+ const separateLinks=Boolean(update||badges);
+ const profileLink=linkToProfile&&separateLinks?'<a class="kit-profile-action" href="#profile" aria-label="View profile for Eli Morgan">View profile '+icon('arrow',15)+'</a>':
   linkToProfile?'<span class="kit-profile-action">View profile '+icon('arrow',15)+'</span>':'';
  const cue=update?'<a class="kit-coach-update" href="#'+coachUpdatePath(update)+'">'+icon('chat',15)+' New coach update '+icon('arrow',14)+'</a>':'';
  const content='<div class="kit-copy"><div class="eyebrow hero-label">NOTTINGHAM CORSAIRS · U14</div><h1>Eli <em>Morgan</em></h1><p class="kit-position">'+e(profile.focus||'Position to discuss')+'</p>'+
-  (update?'<div class="kit-home-actions">'+profileLink+cue+'</div>':profileLink)+'</div>'+shirtGraphic(profile.shirt);
- return linkToProfile&&!update
+  (linkToProfile&&separateLinks?'<div class="kit-home-actions">'+profileLink+cue+'</div>':profileLink)+'</div>'+shirtGraphic(profile.shirt)+badges;
+ return linkToProfile&&!separateLinks
   ?'<a class="hero profile-hero player-kit floodlights kit-profile-link" href="#profile" aria-label="View profile for Eli Morgan">'+content+'</a>'
   :'<section class="hero profile-hero player-kit'+(linkToProfile?' floodlights':'')+'">'+content+'</section>';
 }
@@ -264,7 +266,7 @@ function today(){
  const work=next?'<a class="home-target" href="#profile/target"><span class="icon-tile">'+icon('flag',18)+'</span>'+
  '<span class="home-target-copy"><strong>Work on next</strong><span>'+e(next)+'</span></span>'+icon('arrow',16)+'</a>':'';
  return playerKit(true)+homeAssignedPack()+work+
- playerPathwayUpdates()+homePathwayStatusLinks()+'<nav class="section today-tiles" aria-label="Player sections">'+
+ playerPathwayUpdates()+'<nav class="section today-tiles" aria-label="Player sections">'+
  todayTile('one-to-one','flag','1:1 coaching','coaching-tile')+
  todayTile('gym','train','Strength & conditioning','gym-tile strength-tile')+
  todayTile('skills','trend','Skills','skills-tile')+
@@ -374,7 +376,7 @@ function myProfile(filter,updateId){
   preferencesCard()+'</section>'+foot();
  const update=findCoachUpdate(updateId);
  const feedback=profileFeedback(update?.type==='feedback'?update.ref:undefined);
- return playerKit()+profilePathways(playerName)+
+ return playerKit()+
  '<div class="profile-tools"><a class="text-link" href="#profile/edit">Edit profile '+icon('arrow',15)+'</a></div>'+
  profileSkillSection()+profileCoachSummary(playerName)+feedback+
  '<div class="metrics-meta"><a class="text-link" href="#skills/profile/all">All skills '+icon('arrow',14)+'</a></div>'+foot();
@@ -1536,16 +1538,19 @@ function playerPathwayUpdates(){
  });
  return updates.length?'<section class="stack home-pathway-updates" aria-label="New pathway updates">'+updates.join('')+'</section>':'';
 }
-function homePathwayStatusLinks(){
+function kitPathwayBadges(home){
  const links=activePathways().flatMap(([key,pathway])=>{
   const record=pathwayRecord(playerName,key),status=pathwayStatus(record);
-  if(!pathwayHasProgress(status)||record.statusSeen!==status)return [];
-  const feedback=pathwayFeedback(key,record);
-  if(feedback&&(record.feedbackSeen??0)<(record.feedbackVersion??1))return [];
-  return ['<a class="text-link" href="#pathways/'+key+'">'+
-   e(pathway.title+' · '+pathwayStatusLabels[status])+icon('arrow',14)+'</a>'];
+  if(!status)return [];
+  if(home){
+   if(!pathwayHasProgress(status)||record.statusSeen!==status)return [];
+   const feedback=pathwayFeedback(key,record);
+   if(feedback&&(record.feedbackSeen??0)<(record.feedbackVersion??1))return [];
+  }
+  return ['<a class="kit-pathway-badge '+status+'" href="#pathways/'+key+'">'+pathwayMark(key,pathway.title)+
+   '<span><strong>'+e(pathway.title)+'</strong>'+pathwayStatusLabel(status)+'</span></a>'];
  });
- return links.length?'<nav class="home-pathway-status-links" aria-label="Your pathways">'+links.join('')+'</nav>':'';
+ return links.length?'<nav class="kit-pathway-badges" aria-label="Your pathways">'+links.join('')+'</nav>':'';
 }
 function homePathwayInterest(){
  const pending=activePathways().filter(([key])=>{
@@ -1554,17 +1559,6 @@ function homePathwayInterest(){
  });
  return pending.length?'<div class="actions home-pathway-interest">'+pending.map(([key,pathway])=>
   '<a class="secondary" href="#pathways/'+key+'">'+e(pathway.title)+' · Interest sent</a>').join('')+'</div>':'';
-}
-function profilePathways(player){
- const entries=activePathways().flatMap(([key,pathway])=>{
-  const record=pathwayRecord(player,key),status=pathwayStatus(record);
-  if(!status)return [];
-  return ['<a class="profile-pathway" href="#pathways/'+key+'">'+pathwayMark(key,pathway.title)+
-   '<span class="profile-pathway-name"><strong>'+e(pathway.title)+'</strong>'+
-   pathwayStatusLabel(status)+'</span>'+icon('arrow',16)+'</a>'];
- });
- return entries.length?'<section class="profile-pathways" aria-labelledby="profile-pathways-title">'+
-  '<h2 class="mini" id="profile-pathways-title">Pathways</h2><div class="profile-pathways-list">'+entries.join('')+'</div></section>':'';
 }
 function pathwayStatus(record){
  if(record.joinedOn)return 'accepted';

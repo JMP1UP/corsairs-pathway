@@ -203,6 +203,9 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 @media (max-width: 355px) {
   .today-tile, .today-tile + .today-tile { gap: 6px; padding-left: 7px; padding-right: 22px; }
   .today-tile .tile-mark { width: 29px; height: 29px; }
+  .today-tile.strength-tile { column-gap: 4px; padding-inline-end: 18px; }
+  .strength-tile .tile-mark { width: 24px; height: 24px; }
+  .strength-tile .tile-arrow { right: 3px; }
   .switch button { padding-inline: 6px; }
   .brand { gap: 5px; }
 }
@@ -304,15 +307,6 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 }
 .pathway-identity .pathway-mark { width: 44px; height: 44px; }
 
-.profile-pathways { margin-top: 14px; }
-.profile-pathways > h2 { margin-bottom: 5px; font-weight: 750; }
-.profile-pathways-list { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; }
-.profile-pathway { display: flex; min-height: 44px; align-items: center; gap: 9px; padding: 7px 10px; }
-.profile-pathway + .profile-pathway { border-top: 1px solid var(--line); }
-.profile-pathway:hover { background: #eaf4ed; }
-.profile-pathway-name { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 9px; }
-.profile-pathway-name strong { overflow-wrap: anywhere; }
-.profile-pathway > svg { flex: none; }
 .pathway-status { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; font-size: 12px; font-weight: 750; }
 .pathway-status.interested { color: var(--muted); }
 .pathway-status.applying { color: #70470d; background: #fff0d6; border-color: #c89449; }
@@ -324,6 +318,14 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .squad-task.squad-application:hover { background: #dceee2; }
 .home-pathway-update .pathway-status { margin-block: 3px; }
 
-.home-pathway-status-links { display: flex; flex-wrap: wrap; gap: 0 16px; margin-top: 6px; }
-.home-pathway-status-links .text-link { min-height: 44px; max-width: 100%; overflow-wrap: anywhere; }
-.home-pathway-status-links .text-link svg { flex: none; }
+.kit-pathway-badges { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 8px; z-index: 2; }
+.kit-pathway-badge {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 44px; max-width: 100%;
+  padding: 4px 8px; border-radius: 9px; border: 1px solid #98b7a4;
+  background: #f5faf6; color: #174d39; font-size: 12px;
+}
+.kit-pathway-badge.accepted { border-color: #699a7c; background: #e2f0e7; }
+.kit-pathway-badge:hover { border-color: var(--green); background: #eaf4ed; }
+.kit-pathway-badge > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.kit-pathway-badge strong { font-weight: 800; }
+.kit-pathway-badge .pathway-status { margin-inline-start: 5px; }
