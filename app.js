@@ -263,13 +263,13 @@ function homeAssignedSession(){
 }
 function today(){
  const {next}=playerCoachSnapshot(playerName);
- const work=next?'<a class="home-target" href="#profile/target"><span class="icon-tile">'+icon('flag',18)+'</span>'+
+ const work=next?'<a class="home-target" href="#coach-feedback"><span class="icon-tile">'+icon('flag',18)+'</span>'+
  '<span class="home-target-copy"><strong>Work on next</strong><span>'+e(next)+'</span></span>'+icon('arrow',16)+'</a>':'';
  return playerKit(true)+homeAssignedSession()+work+
  playerPathwayUpdates()+homeLatestProgress()+'<nav class="section today-tiles" aria-label="Player sections">'+
- todayTile('one-to-one','flag','1:1 coaching','coaching-tile')+
+ todayTile('skills','trend','Rugby skills','skills-tile')+
  todayTile('gym','train','Strength & conditioning','gym-tile strength-tile')+
- todayTile('skills','trend','Skills','skills-tile')+
+ todayTile('coach-feedback','chat','Coach feedback','coaching-tile')+
  todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+
  (activePathways().some(([key])=>pathwayStatus(pathwayRecord(playerName,key)))?'<div class="actions home-quick-links"><a class="text-link" href="#pathways">Explore rugby pathways '+icon('arrow',16)+'</a></div>':'')+foot();
 }
@@ -285,7 +285,7 @@ function playerCoachSnapshot(name){
   next:focus?.note||target?.goal
  };
 }
-function profileCoachSummary(name){
+function profileCoachSummary(name,showHeading=true){
  const {focus,target,praises,positive,praiseSkill,next}=playerCoachSnapshot(name);
  if(!next&&!positive)return '';
  const extraSkills=[...new Set(praises.flatMap(note=>(note.factors??[]).map(f=>f.aspect)))]
@@ -299,7 +299,8 @@ function profileCoachSummary(name){
   (praiseSkill?'<p class="mini">'+e(skillName(praiseSkill))+'</p>':'')+'<p>'+e(positive)+'</p>'+
   (extraSkills.length?'<div class="skill-shortcuts">'+extraSkills.map(skill=>skillShortcut(skill,'profile-highlight')).join('')+'</div>':'')+
   '</div>':'';
- return '<section class="section" aria-labelledby="profile-coach-title"><h2 class="section-title block-title" id="profile-coach-title">From your coach</h2>'+
+ return '<section class="section" aria-label="Current coaching feedback">'+
+  (showHeading?'<h2 class="section-title block-title">From your coach</h2>':'')+
   '<div class="card profile-coach-summary">'+work+praise+'</div></section>';
 }
 function feedbackKind(review){
@@ -325,14 +326,14 @@ function profileFeedbackCard(review,collapsed=false){
    (review.goodWork?tag('Good work','good'):'')+'</div>':'')+
   (collapsed?fold('Read full note',message,'note-fold'):message)+'</article>';
 }
-function profileFeedback(highlightedId){
+function profileFeedback(highlightedId,title='Coach feedback'){
  const {reviews:history,target,praises}=playerCoachSnapshot(playerName);
  const reviews=history.filter(note=>note.id!=='welcome');
  if(!reviews.length)return '';
  const recent=reviews.find(note=>note.id===highlightedId)??reviews[0];
  const older=reviews.filter(note=>note!==recent);
  const card=note=>profileFeedbackCard(note,note.id!==highlightedId&&(note===praises[0]||note===target));
- return '<section class="section section-destination" id="profile-feedback" tabindex="-1"><h2 class="section-title block-title">Coach feedback</h2>'+
+ return '<section class="section section-destination" id="profile-feedback" tabindex="-1"><h2 class="section-title block-title">'+e(title)+'</h2>'+
  '<div class="stack profile-feedback-list">'+card(recent)+
  (older.length?fold('Earlier feedback ('+older.length+')','<div class="stack">'+older.map(card).join('')+'</div>'):'')+'</div></section>';
 }
@@ -370,6 +371,17 @@ function coachProfileSkills(name){
   (list?'<div class="coach-extra-skill-list">'+list+'</div>':'')+
   (available.length?'<label>Add a skill<select name="extraSkill" required>'+opt('','','Choose a skill')+available.map(skill=>opt(skill,'',skillName(skill))).join('')+'</select></label>'+
    '<button class="primary">Add skill to profile</button>':'')+'</form>';
+}
+function playerFeedbackPage(){
+ const name=playerName;
+ const summary=profileCoachSummary(name,false);
+ const notes=profileFeedback(undefined,'Feedback history');
+ const plan=onePlan(name),request=oneRequest(name);
+ const oneLabel=plan?'View your 1:1 plan':request?'View your 1:1 request':oneHistory(name).length?'1:1 coaching history':'Ask for a 1:1';
+ return compactHeader('Coach feedback','chat','coaching-tile')+
+  (summary||notes?'':'<p class="details section">Your coach’s notes and targets will appear here.</p>')+
+  summary+notes+
+  '<div class="section"><a class="text-link" href="#one-to-one">'+e(oneLabel)+' '+icon('arrow',15)+'</a></div>'+foot();
 }
 function myProfile(filter,updateId){
  if(filter==='edit')return '<h1 class="page-title">Edit profile</h1>'+
@@ -474,18 +486,14 @@ function oneToOne(){
  const p=state.profiles[name];
  const planned=onePlan(name),finished=oneHistory(name).find(x=>x.reviewId);
  const picker=planned?'':playerSkillPicker(focus,p.focus,Boolean(request));
- const stage=planned?1:request?0:finished?2:0;
- const steps=['Ask your coach','Meet & practise','Get feedback'];
  return compactHeader('1:1 coaching','flag','coaching-tile')+
- '<div class="actions"><a class="secondary" href="#one-calendar">1:1 calendar '+icon('arrow',15)+'</a></div>'+
- '<ol class="one-steps" aria-label="1:1 coaching steps">'+steps.map((label,i)=>'<li '+(i===stage?'aria-current="step"':'')+
-  (i<stage?' class="complete"':'')+'><span aria-hidden="true">'+(i<stage?icon('check',14):i+1)+'</span>'+e(label)+'</li>').join('')+'</ol>'+
  (planned?'<section class="section"><h2 class="section-title block-title">Your session plan</h2>'+oneCard(planned)+
   '<p class="details">'+(planned.meeting?'':'Ask your coach when and where to meet. ')+
-  'After you’ve worked together, your coach can leave feedback here.</p></section>':'')+
+  'After you’ve worked together, your coach can leave feedback here.</p>'+
+  '<a class="text-link" href="#one-calendar">View in calendar '+icon('arrow',15)+'</a></section>':'')+
  (request?'<section class="card section one-request-status"><p class="eyebrow">Waiting for your coach</p><h2 class="card-title">'+e(skillName(request))+'</h2>'+
   (state.oneRequestNotes[name]?'<p class="details"><strong>You asked for help with:</strong> '+e(state.oneRequestNotes[name])+'</p>':'')+
-  '<p class="details">Your coach can book a session or a call. When they do, you’ll see the details here and in your calendar.</p>'+
+  '<p class="details">Your coach has your request. If you arrange a time together, the details will appear here.</p>'+
   fold('Change or cancel request',picker,'note-fold')+'</section>':'')+
  completedOne(name,true)+
  (!planned&&!request&&!finished?picker:'')+
@@ -1166,6 +1174,7 @@ const queueFor=name=>{
 function coachHome(){
  const rows=Object.keys(roster).map((name,i)=>({name,i,...queueFor(name),activity:playerActivity(name)})).sort((a,b)=>Number(b.needed)-Number(a.needed)||Number(Boolean(b.request))-Number(Boolean(a.request))||Number(b.feedbackDue)-Number(a.feedbackDue)||Number(b.due)-Number(a.due)||b.pathways.length-a.pathways.length||b.count-a.count);
  return '<h1 class="page-title">U14 squad</h1>'+
+ (rows.some(row=>row.request||onePlan(row.name))?'<a class="text-link" href="#coach-calendar">1:1 calendar '+icon('arrow',15)+'</a>':'')+
  (rows.length>8?'<div class="section form"><label>Find a player<input type="search" data-squad-search autocomplete="off"></label></div>':'')+
  '<div class="section stack">'+rows.map(squadPlayerCard).join('')+
  '<p class="details" data-squad-no-matches hidden>No players match that name.</p></div>'+foot();
@@ -1445,7 +1454,7 @@ function review(id){
  fold('All logged results',sessionResults(l),'session-results')+'</section>'+
  (posted?'<section class="section"><h2 class="section-title">Feedback sent</h2>'+reviewCard(posted)+'</section>':reviewForm(id,l.player))+foot();
 }
-const routes={today,'one-to-one':oneToOne,'one-calendar':()=>oneCalendar(),'coach-calendar':()=>oneCalendar(true),'coach-one':oneCoach,train:()=>train(trainingView),gym,field,fitness,progress,skills:progress,skill:skillPage,'training-results':trainingResultsPage,fuel,'coach-fuel':coachFuel,profile:myProfile,'gym-builder':gymBuilder,results:savedResults,pathways:key=>pathwayPage(key),'coach-pathways':(index,key)=>pathwayPage(key,index),'edit-pathways':editPathwayInfo,'position-plan':arg=>playerProfile(arg??'0'),session,desk:coachHome,player:staffPlayer,programmes,pack:coachPack,builder:()=>editor(),preview:()=>editor(true),reviews,review,observe};
+const routes={today,'coach-feedback':playerFeedbackPage,'one-to-one':oneToOne,'one-calendar':()=>oneCalendar(),'coach-calendar':()=>oneCalendar(true),'coach-one':oneCoach,train:()=>train(trainingView),gym,field,fitness,progress,skills:progress,skill:skillPage,'training-results':trainingResultsPage,fuel,'coach-fuel':coachFuel,profile:myProfile,'gym-builder':gymBuilder,results:savedResults,pathways:key=>pathwayPage(key),'coach-pathways':(index,key)=>pathwayPage(key,index),'edit-pathways':editPathwayInfo,'position-plan':arg=>playerProfile(arg??'0'),session,desk:coachHome,player:staffPlayer,programmes,pack:coachPack,builder:()=>editor(),preview:()=>editor(true),reviews,review,observe};
 
 const gymExerciseGroups=[
  ['Lower body',[
@@ -1937,8 +1946,8 @@ function render(focus=false){
   }
  }
  const pathwayRoute='edit-pathways';
- const tabs=role==='coach'?[['desk','users','Squad'],['coach-calendar','clock','1:1'],['programmes','clip','Programmes'],['coach-fuel','fuel','Food'],[pathwayRoute,'flag','Pathways']]:[];
- const selected=({'coach-pathways':'desk','edit-pathways':pathwayRoute,'coach-one':'coach-calendar',player:'desk','position-plan':'desk',reviews:'desk',review:'desk',observe:'desk',pack:'programmes',builder:'programmes',preview:'programmes'})[name]??name;
+ const tabs=role==='coach'?[['desk','users','Squad'],['programmes','clip','Programmes'],['coach-fuel','fuel','Food'],[pathwayRoute,'flag','Pathways']]:[];
+ const selected=({'coach-pathways':'desk','edit-pathways':pathwayRoute,'coach-one':'desk','coach-calendar':'desk',player:'desk','position-plan':'desk',reviews:'desk',review:'desk',observe:'desk',pack:'programmes',builder:'programmes',preview:'programmes'})[name]??name;
  nav.className='tabs';
  nav.hidden=role!=='coach';
  nav.innerHTML=tabs.map(([r,i,l])=>'<a class="tab" '+(r===selected?'aria-current="page" ':'')+'href="#'+r+'">'+icon(i,18)+e(l)+'</a>').join('');
@@ -1946,7 +1955,8 @@ function render(focus=false){
  document.querySelector('.brand').href=role==='coach'?'#desk':'#today';
  let returnLink='';
  if(role==='player'&&!['today','session','results','skill','training-results','one-calendar'].includes(name)){
-  if(name==='gym-builder')returnLink=back('gym','Back to Gym');
+  if(name==='one-to-one')returnLink=back('coach-feedback','Back to Coach feedback');
+  else if(name==='gym-builder')returnLink=back('gym','Back to Gym');
   else if(name==='field')returnLink=back('skills','Back to Skills');
   else if(name==='profile'&&arg==='edit')returnLink=back('profile','Back to Profile');
   else if(['skills','progress'].includes(name)&&arg==='profile')returnLink=back('profile','Back to Profile');

@@ -267,7 +267,7 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .pathway-date-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* Coach navigation stays available across the five work areas. */
-.tabs { grid-template-columns: repeat(5, minmax(0,1fr)); gap: 2px; padding-inline: 5px; }
+.tabs { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 2px; padding-inline: 5px; }
 .tabs .tab { min-width: 0; font-size: clamp(10px, 3vw, 13px); }
 
 .programme-create { margin-top: 16px; }
