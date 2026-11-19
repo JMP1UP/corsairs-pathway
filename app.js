@@ -150,7 +150,9 @@ const go=to=>{if(location.hash==='#'+to)render();else location.hash=to;};
 const dateText=value=>/^\d{4}-\d\d-\d\d$/.test(value)?new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z')):value;
 const names={done:'Completed',partial:'Part completed',skipped:'Skipped'};
 const playerLogLabel=(plan,log)=>isGym(plan)&&log.status==='partial'?'Partial gym log':names[log.status];
-const foot=()=>'<p class="note">Prototype · fictional players · '+(storageOK?'changes stay in this browser':'changes last until this page closes')+'</p>';
+const visibilityNote=(player=playerName)=>'<p class="call">Visible to '+e(player)+', verified linked parent or carer (Jo Morgan) and authorised U14 coaches.</p>';
+const safeguardingFold=()=>fold('Help &amp; safeguarding','<p class="details"><strong>Club Safeguarding Officer:</strong> Pat Taylor · safeguarding@nottinghamcorsairsrfc.com (demo contact). Speak to your parent, carer or the Club Safeguarding Officer if anything worries you. Safeguarding and medical matters are handled outside this app.</p>','safeguard-fold');
+const foot=()=>safeguardingFold()+'<p class="note">Prototype · fictional players · '+(storageOK?'changes stay in this browser':'changes last until this page closes')+'</p>';
 const notFound=(to)=>heading('Corsairs pathway','That page moved')+'<div class="actions">'+back(to,'Back to your dashboard')+'</div>';
 
 function planCard(plan,feature=false,origin='train',log=null){
@@ -168,7 +170,7 @@ function observationMeta(x){
  return bits.length?'<p class="mini">'+bits.map(e).join(' · ')+'</p>':'';
 }
 function reviewCard(x){
- return '<article class="card accent"><div class="eyebrow">Coach Alex</div>'+observationMeta(x)+((x.factors??[]).map(f=>'<div class="factor-result">'+tag(f.aspect)+(f.marker?tag(f.marker,'dim'):'')+'</div>').join(''))+(x.goodWork?'<div class="factor-result">'+tag('Good work','good')+'</div>':'')+'<p class="details">'+e(x.body)+'</p>'+(x.goal?'<div class="line"><div class="row"><span class="icon-tile">'+icon('flag')+'</span><div><span class="mini">YOUR NEXT TARGET</span><h3 class="activity-name">'+e(x.goal)+'</h3><p class="mini">Review: '+e(dateText(x.review)||'To be agreed')+'</p></div></div></div>':'')+'<p class="mini line">Visible to you, your linked parent or carer and authorised coaches.</p></article>';
+ return '<article class="card accent"><div class="eyebrow">Coach Alex</div>'+observationMeta(x)+((x.factors??[]).map(f=>'<div class="factor-result">'+tag(f.aspect)+(f.marker?tag(playerMarker(f.marker),'dim'):'')+'</div>').join(''))+(x.goodWork?'<div class="factor-result">'+tag('Good work','good')+'</div>':'')+'<p class="details">'+e(x.body)+'</p>'+(x.goal?'<div class="line"><div class="row"><span class="icon-tile">'+icon('flag')+'</span><div><span class="mini">YOUR NEXT TARGET</span><h3 class="activity-name">'+e(x.goal)+'</h3><p class="mini">Review: '+e(dateText(x.review)||'To be agreed')+'</p></div></div></div>':'')+'<p class="mini line">Visible to '+e(x.player||playerName)+', linked parent or carer (Jo Morgan) and authorised U14 coaches.</p></article>';
 }
 
 function fold(label,body,classes=''){
@@ -392,7 +394,7 @@ function myProfile(filter,updateId){
  return playerKit()+
  '<div class="profile-tools"><a class="text-link" href="#profile/edit">Edit profile '+icon('arrow',15)+'</a></div>'+
  profileSkillSection()+profileCoachSummary(playerName)+feedback+
- '<div class="metrics-meta"><a class="text-link" href="#skills/profile/all">All skills '+icon('arrow',14)+'</a></div>'+foot();
+ '<div class="metrics-meta"><a class="text-link" href="#skills/profile/all">All skills '+icon('arrow',14)+'</a></div>'+fold('Who can see your progress','<p class="details"><strong>Jo Morgan</strong> · Verified parent or carer<br><strong>Coach Alex</strong> · U14 coaching staff</p>','section')+foot();
 }
 const oneHistory=name=>state.oneSessions[name]??[];
 const onePlan=name=>oneHistory(name).find(x=>!x.reviewId);
@@ -429,9 +431,10 @@ function oneCalendar(coach=false){
 }
 function oneCard(session,feedbackFirst=false){
  const review=state.reviews.find(x=>x.id===session.reviewId);
+ const marker=review?.factors?.[0]?.marker;
  const drills=session.drills.length?'<ol class="one-drills">'+session.drills.map(d=>'<li><strong>'+e(d.name)+'</strong>'+(d.notes?'<p class="details">'+e(d.notes)+'</p>':'')+'</li>').join('')+'</ol>':'';
- const feedback=review?'<div class="line">'+(review.goodWork?tag('Good work','good'):'')+'<p class="details">'+e(review.body)+'</p>'+
- (review.goal?'<p class="one-next"><strong>Try next:</strong> '+e(review.goal)+'</p>':'')+(review.review?'<p class="mini">Check in: '+e(dateText(review.review))+'</p>':'')+'</div>':'';
+ const feedback=review?'<div class="line">'+(marker||review.goodWork?'<div class="factor-result">'+(marker?'<span class="status-label '+markerClass(marker)+'"><span class="stage-dot '+markerClass(marker)+'" aria-hidden="true"></span>'+e(playerMarker(marker))+'</span>':'')+(review.goodWork?tag('Good work','good'):'')+'</div>':'')+'<p class="details">'+e(review.body)+'</p>'+
+ (review.goal?'<p class="one-next"><strong>Try next:</strong> '+e(review.goal)+'</p>':'')+(review.review?'<p class="mini">Check in: '+e(dateText(review.review))+'</p>':'')+'<p class="mini line">Visible to '+e(review.player||playerName)+', linked parent or carer (Jo Morgan) and authorised U14 coaches.</p></div>':'';
  return '<article class="card one-session"><h3 class="card-title">'+e(skillName(session.skill))+'</h3><p class="mini">'+e(oneBookingDetails(session))+'</p>'+
  (!review&&session.meeting?'<p class="details">'+e(session.meeting)+'</p>':'')+
  (session.focus?'<p class="details"><strong>Session focus:</strong> '+e(session.focus)+'</p>':'')+
@@ -455,7 +458,7 @@ function oneCoach(index,action){
  '<label>What will you work on together? (optional)<textarea name="session-focus" maxlength="250" placeholder="One thing you’ll watch or practise together">'+e(session?.focus??'')+'</textarea></label>'+
  fold('Add practice ideas (optional)',[0,1].map(i=>'<fieldset class="one-drill-fields"><legend>Practice idea '+(i+1)+'</legend><label>Name<input name="drill'+i+'" maxlength="80" value="'+e(drills[i]?.name)+'" placeholder="e.g. Pass to a moving teammate"></label><label>What to do<textarea name="notes'+i+'" maxlength="480" placeholder="Setup, reps or a short cue">'+e(drills[i]?.notes)+'</textarea></label></fieldset>').join(''),'one-practice-options')+
  '<button class="primary">'+(session?'Save changes':'Save booking')+'</button><p class="alert" role="alert"></p></form>';
- const feedback=session?'<form id="one-feedback-form" data-index="'+index+'" data-session="'+e(session.id)+'" class="card form"><label>What did you notice?<textarea name="body" maxlength="600" required></textarea></label>'+praiseField+optionalNextTarget()+'<button class="primary">Finish and share feedback</button><p class="alert" role="alert"></p></form>':'';
+ const feedback=session?'<form id="one-feedback-form" data-index="'+index+'" data-session="'+e(session.id)+'" class="card form"><label>What did you notice?<textarea name="body" maxlength="600" required placeholder="Call out what went well or one cue to use next"></textarea></label><label>Where they are now<select name="stage">'+opt('','','Leave stage unchanged')+markers.map(x=>opt(x,'',playerMarker(x))).join('')+'</select></label>'+praiseField+optionalNextTarget()+visibilityNote(name)+'<button class="primary">Finish and share feedback</button><p class="alert" role="alert"></p></form>':'';
  const feedbackSection='<section class="section"><h2 class="section-title block-title">Give 1:1 feedback</h2>'+feedback+'</section>';
  const planSection=session?'<section class="section"><h2 class="section-title block-title">Booked 1:1</h2>'+oneCard(session)+
  (session.requestNote?'<p class="details"><strong>Player’s request:</strong> '+e(session.requestNote)+'</p>':'')+fold('Change booking',planForm,'section')+'</section>':'';
@@ -502,7 +505,7 @@ function oneToOne(){
 }
 let trainingView='all';
 function trainingTabs(active){
- const tabs=[['sessions','Gym','gym'],['fitness','Speed & fitness','fitness'],['history','History','gym/history']];
+ const tabs=[['history','Activity','gym'],['programmes','Programmes','gym/programmes'],['progress','Progress','gym/progress']];
  return '<nav class="gym-tabs" aria-label="Strength and conditioning sections">'+tabs.map(([key,label,path])=>
   '<a class="gym-tab" href="#'+path+'" '+(key===active?'aria-current="page"':'')+'>'+e(label)+'</a>').join('')+'</nav>';
 }
@@ -546,6 +549,93 @@ function sessionHistory(entries,plans,origin){
    '<div class="card history-empty"><p>No sessions logged yet.</p><a class="text-link" href="#gym">Choose a gym session '+icon('arrow',15)+'</a></div>')+
   '</section>';
 }
+const conditioningBlock={
+ id:'speed-fitness-5',title:'Speed & fitness foundations',
+ sessions:[
+  {title:'Find your starting point',category:'Speed',pack:'speed-starts',note:'Log your first 10 m time.'},
+  {title:'Stop, turn & go',category:'Fitness',pack:'speed-turns',note:'Work on balance as you change direction.'},
+  {title:'Build your base',category:'Gym',note:'Practise controlled bodyweight movements.'},
+  {title:'Sharpen your start',category:'Speed',pack:'speed-starts',note:'Practise the first few steps with your coach.'},
+  {title:'See your progress',category:'Speed',pack:'speed-starts',note:'Repeat the same 10 m test and compare your times.'}
+ ]
+};
+function blockPlans(){
+ return conditioningBlock.sessions.map((session,index)=>{
+  const template=session.pack?trainingPacks[session.pack]:gymTemplates[1];
+  return {...structuredClone(template),id:'sc-foundations-'+index,title:session.title,preset:false,
+   audience:playerName,programmeId:conditioningBlock.id,programmeStep:index,category:session.category};
+ });
+}
+function completedBlockSession(plan){
+ return playerLogs(playerName).some(log=>log.plan===plan.id&&log.status==='done');
+}
+function conditioningProgramme(){
+ const started=state.conditioningBlocks?.[playerName]?.includes(conditioningBlock.id);
+ const plans=blockPlans(),done=plans.filter(completedBlockSession).length;
+ const next=plans.find(plan=>!completedBlockSession(plan));
+ return '<section class="section sc-programme"><div class="sc-programme-intro"><span class="eyebrow">5 sessions · Coach-led</span>'+
+  '<h2>'+e(conditioningBlock.title)+'</h2><p>Work through each session with your coach. Take the recovery time they recommend.</p>'+
+  (started?'<p class="sc-block-count">'+done+' of 5 completed</p><progress max="5" value="'+done+'" aria-label="Programme sessions completed"></progress>':'')+
+  (!started?'<button class="primary" type="button" data-start-conditioning>Start programme</button>':next?
+   '<a class="primary" href="#'+sessionPath(next,'gym','new')+'">'+(done?'Continue':'Start session 1')+'</a>':'<p class="sc-block-count">Block complete</p>')+'</div>'+
+  '<ol class="sc-block-list">'+plans.map((plan,index)=>{
+   const complete=completedBlockSession(plan);
+   return '<li><span class="sc-step" aria-hidden="true">'+(complete?icon('check',18):index+1)+'</span><div><span class="mini">Session '+(index+1)+(complete?' · Completed':started&&plan.id===next?.id?' · Up next':'')+'</span>'+
+    '<h3>'+e(plan.title)+'</h3><p class="mini">'+e(conditioningBlock.sessions[index].note)+'</p>'+
+    (started?'<a class="text-link" href="#'+sessionPath(plan,'gym','new')+'">'+(complete?'Log again':'Open session')+'</a>':'')+'</div></li>';
+  }).join('')+'</ol></section>';
+}
+function conditioningLogResult(plan,log){
+ const results=plan.items.flatMap((activity,index)=>{
+  const entry=log.items?.[index];
+  if(entry?.status!=='done')return [];
+  if(activity.unit==='sets'){
+   const sets=(entry.sets??[]).filter(set=>Number(set.reps)>0);
+   const loads=sets.map(set=>Number(set.load)).filter(load=>load>0);
+   return sets.length?[activity.name+' · '+sets.length+(sets.length===1?' set':' sets')+(loads.length?' · up to '+Math.max(...loads)+' kg':' · bodyweight')]:[];
+  }
+  return activity.unit&&entry.value!==''&&entry.value!=null?[activity.name+' · '+entry.value+' '+(unitShort[activity.unit]??activity.unit)]:[];
+ });
+ return results.slice(0,2).map(text=>'<span>'+e(text)+'</span>').join('')||'<span>'+e(log.status==='skipped'?'Session skipped':log.status==='partial'?'Part of this session logged':'Session completed')+'</span>';
+}
+function conditioning(subpage,filter='all',selectedLog){
+ const plans=ownPlans().filter(plan=>isGym(plan)||isFitness(plan));
+ const entries=playerLogs(playerName).filter(log=>plans.some(plan=>plan.id===log.plan));
+ const head='<div class="sc-page-head"><h1 class="page-title">Strength &amp; conditioning</h1>'+
+  '<a class="primary" href="#gym/add">'+icon('plus',18)+' Add a session</a></div>';
+ if(subpage==='add'){
+  const choices=plans.filter(plan=>!plan.programmeId&&(filter!=='fitness'||isFitness(plan)));
+  const group=(title,list)=>list.length?'<section class="section"><h2 class="section-title">'+title+'</h2><div class="sc-session-choices">'+list.map(plan=>
+   '<a href="#'+sessionPath(plan,'gym','new')+'"><span class="icon-tile">'+icon(isGym(plan)?'train':'bolt')+'</span><span><strong>'+e(plan.title)+'</strong><small>'+e(isGym(plan)?'Gym':'Speed & fitness')+(plan.duration?' · '+plan.duration+' min':'')+'</small></span></a>').join('')+'</div></section>':'';
+  return '<h1 class="page-title">Add a session</h1><a class="sc-custom-session" href="#gym-builder">'+icon('plus',22)+'<span><strong>Build my own session</strong><small>Choose exercises or add your own</small></span></a>'+
+   group('From your coach',choices.filter(plan=>!plan.preset&&!plan.personal))+
+   group('Choose a preset',choices.filter(plan=>plan.preset))+group('My saved sessions',choices.filter(plan=>plan.personal))+
+   '<p class="mini section">Use weights with a qualified trainer supervising.</p>'+foot();
+ }
+ if(subpage==='programmes')return head+trainingTabs('programmes')+conditioningProgramme()+foot();
+ if(subpage==='progress'){
+  const {gym,sprint}=trainingResultGroups();
+  return head+trainingTabs('progress')+'<section class="section">'+resultSection('gym-chart','Gym progress',gym,'Log sets and reps to start your graph.')+
+   resultSection('sprint-chart','Sprint progress',sprint,'Log the same sprint distance to compare your times.')+'</section>'+foot();
+ }
+ if(!['all','gym','fitness'].includes(filter))filter='all';
+ const visible=entries.filter(log=>filter==='all'||(filter==='gym'?isGym(plans.find(plan=>plan.id===log.plan)):isFitness(plans.find(plan=>plan.id===log.plan))));
+ const months=logMonths(visible).map(([month,logs])=>'<section class="sc-month"><h2>'+e(month)+'</h2><div class="sc-feed">'+logs.map(log=>{
+  const plan=plans.find(plan=>plan.id===log.plan);
+  return '<a class="sc-activity'+(selectedLog===log.id?' selected-attempt':'')+'" href="#'+sessionPath(plan,'gym-history'+(filter==='all'?'':'-'+filter),log.id)+'" data-history-log="'+e(log.id)+'">'+
+   '<div class="sc-activity-top"><span class="sc-activity-type">'+icon(isGym(plan)?'train':'bolt',17)+e(isGym(plan)?'Gym':'Speed & fitness')+'</span><time>'+e(resultLoggedAt.format(log.at))+'</time></div>'+
+   '<h3>'+e(plan.title)+'</h3><div class="sc-log-result">'+conditioningLogResult(plan,log)+'</div>'+
+   (plan.programmeId?'<p class="mini">'+e(conditioningBlock.title)+' · Session '+(plan.programmeStep+1)+'</p>':'')+
+   '<div class="sc-activity-bottom">'+tag(playerLogLabel(plan,log),log.status==='partial'?'attention':log.status==='done'?'good':'dim')+'<span>View session</span></div></a>';
+ }).join('')+'</div></section>').join('');
+ const finished=entries.filter(log=>log.status==='done').length;
+ return head+trainingTabs('history')+
+  (entries.length?'<div class="sc-stats"><span><strong>'+entries.length+'</strong> sessions logged</span><span><strong>'+finished+'</strong> completed</span></div>':'')+
+  '<nav class="sc-filter" aria-label="Filter activity">'+[['all','All'],['gym','Gym'],['fitness','Speed & fitness']].map(([key,label])=>
+   '<a href="#gym/history/'+key+'" '+(key===filter?'aria-current="page"':'')+'>'+label+'</a>').join('')+'</nav>'+
+  (months?months:'<section class="sc-empty"><span class="icon-tile">'+icon('train',28)+'</span><h2>'+e(entries.length?'No sessions here yet':'Your work starts here')+'</h2><p>'+e(entries.length?'Choose another filter to see your sessions.':'Log your first session. Each visit builds your story.')+'</p>'+(!entries.length?'<a class="primary" href="#gym/add">Add a session</a>':'')+'</section>')+
+  (!entries.length?'<a class="sc-discover" href="#gym/programmes"><strong>Want a plan to follow?</strong><span>Explore the 5-session speed & fitness block</span></a>':'')+foot();
+}
 function train(view,subpage,historyFilter,selectedLog){
  const gymView=view==='gym',fitnessView=view==='fitness',pitchView=view==='field';
  const origin=gymView?'gym':fitnessView?'fitness':pitchView?'field':'train';
@@ -572,9 +662,9 @@ function train(view,subpage,historyFilter,selectedLog){
    '<p class="mini gym-safety">Use weights with a qualified trainer supervising.</p></div>':'')+
   (!gymView&&!fitnessView&&logs.length?sessionHistory(logs,visible,origin):'')+foot();
 }
-function gym(subpage,historyFilter,selectedLog){return train('gym',subpage,historyFilter,selectedLog);}
+function gym(subpage,historyFilter,selectedLog){return conditioning(subpage,historyFilter,selectedLog);}
 function field(){return train('field');}
-function fitness(){return train('fitness');}
+function fitness(){return conditioning('add','fitness');}
 const positionSelect=(name,value,label,empty='Not set')=>'<label>'+label+'<select name="'+name+'">'+opt('',value,empty)+Object.keys(positionTips).map(x=>opt(x,value)).join('')+'</select></label>';
 function playerProfile(arg){
  const staff=arg!==undefined,player=staff?Object.keys(roster)[Number(arg)]:'Eli Morgan';
@@ -852,9 +942,10 @@ function resultCard(series,index,selectedId){
 function resultSection(id,title,groups,empty,selectedId){
  const series=[...groups.values()];
  const options=series.map((x,i)=>'<option value="'+i+'">'+e(x.label)+'</option>').join('');
+ const gym=id==='gym-chart';
  return '<section class="result-panel" aria-labelledby="'+id+'"><h3 id="'+id+'">'+title+'</h3>'+
- (series.length?(series.length>1?'<label class="result-choice">Compare '+(id==='gym-chart'?'an exercise':'a timed drill')+'<select data-result-picker>'+options+'</select></label>':'')+
- series.map((entry,index)=>resultCard(entry,index,selectedId)).join(''):'<p class="mini">'+empty+'</p>'+exampleResult(id))+'</section>';
+ (series.length?(series.length>1?'<label class="result-choice">Compare '+(gym?'an exercise':'a timed drill')+'<select data-result-picker>'+options+'</select></label>':'')+
+ series.map((entry,index)=>resultCard(entry,index,selectedId)).join(''):'<p class="mini">'+empty+' <a class="text-link" href="#'+(gym?'gym/add':'fitness')+'">'+(gym?'Choose a gym session':'Choose a speed session')+' '+icon('arrow',14)+'</a></p>'+exampleResult(id))+'</section>';
 }
 function exampleResult(id){
  const gym=id==='gym-chart';
@@ -901,12 +992,15 @@ function savedResults(logId,source){
  const {gym,sprint}=trainingResultGroups(), gymSession=isGym(plan);
  const groups=new Map([...(gymSession?gym:sprint)].filter(([,series])=>series.points.some(point=>point.logId===log.id)));
  const origin=sessionOrigin(plan);
- return (source==='today'?back('today','Back to Home'):back(origin,gymSession?'Back to Gym':'Back to Speed & fitness'))+
+ const block=plan.programmeId===conditioningBlock.id;
+ const next=block?blockPlans().find(item=>!completedBlockSession(item)):null;
+ return (source==='today'?back('today','Back to Home'):back('gym','Back to Activity'))+
  compactHeader(gymSession?'Gym results':'Sprint results',gymSession?'train':'bolt',gymSession?'gym-tile':'skills-tile',null,plan.title+' · '+resultLoggedAt.format(log.at))+
  '<div class="player-log-status">'+tag(playerLogLabel(plan,log),log.status==='partial'?'attention':'good')+partialGymSummary(plan,log)+'</div>'+
  '<section class="section">'+(groups.size?resultSection(gymSession?'gym-chart':'sprint-chart','Your graph',groups,'',log.id):
  '<p class="card">Your session is in history. This log has no '+(gymSession?'sets or reps':'timed sprints with a distance')+' to graph.</p>')+'</section>'+
- '<div class="actions section"><a class="primary" href="#'+sessionPath(plan,origin,log.id)+'">View saved log</a><a class="text-link" href="#'+sessionPath(plan,origin,'new')+'">Log again</a></div>'+foot();
+ '<div class="actions section"><a class="primary" href="#'+sessionPath(plan,origin,log.id)+'">View saved log</a><a class="text-link" href="#'+sessionPath(plan,origin,'new')+'">Log again</a></div>'+
+ (block?'<section class="sc-result-programme"><h2>'+e(log.status==='done'?next?'Programme progress':'Block complete':'Keep going with this session')+'</h2><p>'+blockPlans().filter(completedBlockSession).length+' of 5 sessions completed</p><a class="secondary" href="#gym/programmes">View programme</a></section>':'')+foot();
 }
 function progress(origin){
  const position=state.profiles[playerName].focus;
@@ -942,6 +1036,7 @@ function coachSkillForm(name){
  '<label class="check"><input type="checkbox" name="good">Highlight good work</label>'+
  '<label class="check"><input type="checkbox" name="priority">Set as current coach focus</label>'+
  (priority?'<p class="mini">Current focus: '+e(skillName(priority.skill))+'</p><button class="secondary" type="button" data-clear-skill-focus>Clear coach focus</button>':'')+
+ visibilityNote(name)+
  '<button class="primary">Save skill update</button><p class="alert" role="alert"></p></form>';
 }
 const playerShirtNumbers=Array.from({length:15},(_,index)=>String(index+1));
@@ -1439,9 +1534,9 @@ function reviewForm(id,player,independent=false,index){
   '<div class="suggestions" id="position-suggestions">'+suggestions(player,'')+'</div>'+factorPicker(2);
   return '<form id="review-form" class="form coach-compact-form" data-id="'+id+'" data-player-index="'+index+'"><input type="hidden" name="player" value="'+e(player)+'"><label>What did you notice?<textarea name="body" maxlength="600" required></textarea></label>'+contextFields+
    optionalNextTarget()+
-   fold('More feedback details',details+factorPicker(1)+praiseField)+'<button class="primary">Publish feedback</button><p id="review-error" class="alert" role="alert"></p></form>';
+   fold('More feedback details',details+factorPicker(1)+praiseField)+visibilityNote(player)+'<button class="primary">Publish feedback</button><p id="review-error" class="alert" role="alert"></p></form>';
  }
- return '<form id="review-form" data-id="'+id+'" class="card form section">'+(independent?'<label>Player<select name="player">'+Object.keys(roster).map(x=>opt(x,'')).join('')+'</select></label>'+contextFields+eventField:'')+'<label>Observed on<input type="date" name="observedOn" required max="'+londonToday()+'" value="'+londonToday()+'"></label>'+positionSelect('position','','Position observed','Not recorded')+'<h2 class="section-title">Give feedback</h2><p class="mini">Pick up to two things you saw. Use a marker only when it helps explain the feedback.</p><div class="suggestions" id="position-suggestions" aria-label="Suggested factors">'+suggestions(player||Object.keys(roster)[0],'')+'</div>'+factorPicker(1)+factorPicker(2)+'<label>What went well or what to try<textarea name="body" maxlength="600" required placeholder="Keep it specific and useful."></textarea></label>'+praiseField+optionalNextTarget()+'<p class="call">Intended for '+e(player||'the player')+', their linked parent or carer and authorised coaches. This demo does not send a notification.</p><button class="primary">Publish feedback '+icon('arrow',16)+'</button><p id="review-error" class="alert" role="alert"></p></form>';
+ return '<form id="review-form" data-id="'+id+'" class="card form section">'+(independent?'<label>Player<select name="player">'+Object.keys(roster).map(x=>opt(x,'')).join('')+'</select></label>'+contextFields+eventField:'')+'<label>Observed on<input type="date" name="observedOn" required max="'+londonToday()+'" value="'+londonToday()+'"></label>'+positionSelect('position','','Position observed','Not recorded')+'<h2 class="section-title">Give feedback</h2><p class="mini">Pick up to two things you saw. Use a marker only when it helps explain the feedback.</p><div class="suggestions" id="position-suggestions" aria-label="Suggested factors">'+suggestions(player||Object.keys(roster)[0],'')+'</div>'+factorPicker(1)+factorPicker(2)+'<label>What went well or what to try<textarea name="body" maxlength="600" required placeholder="Keep it specific and useful."></textarea></label>'+praiseField+optionalNextTarget()+visibilityNote(player||'the player')+'<button class="primary">Publish feedback '+icon('arrow',16)+'</button><p id="review-error" class="alert" role="alert"></p></form>';
 }
 function review(id){
  const l=Object.values(state.logs).find(x=>x.id===id);if(!l)return notFound('reviews');
@@ -1454,7 +1549,27 @@ function review(id){
  fold('All logged results',sessionResults(l),'session-results')+'</section>'+
  (posted?'<section class="section"><h2 class="section-title">Feedback sent</h2>'+reviewCard(posted)+'</section>':reviewForm(id,l.player))+foot();
 }
-const routes={today,'coach-feedback':playerFeedbackPage,'one-to-one':oneToOne,'one-calendar':()=>oneCalendar(),'coach-calendar':()=>oneCalendar(true),'coach-one':oneCoach,train:()=>train(trainingView),gym,field,fitness,progress,skills:progress,skill:skillPage,'training-results':trainingResultsPage,fuel,'coach-fuel':coachFuel,profile:myProfile,'gym-builder':gymBuilder,results:savedResults,pathways:key=>pathwayPage(key),'coach-pathways':(index,key)=>pathwayPage(key,index),'edit-pathways':editPathwayInfo,'position-plan':arg=>playerProfile(arg??'0'),session,desk:coachHome,player:staffPlayer,programmes,pack:coachPack,builder:()=>editor(),preview:()=>editor(true),reviews,review,observe};
+function parentView(){
+ const name=playerName,reviews=playerHistory(name),target=activeTarget(name),focus=currentSkillFocus(name,target);
+ const praise=[...reviews,...(state.skillNotes[name]??[])].filter(r=>r.goodWork)
+  .sort((a,b)=>(b.savedAt??0)-(a.savedAt??0)||(b.observedOn??'').localeCompare(a.observedOn??''))[0];
+ const positive=praise?.body||(reviews.some(r=>r.id==='welcome')?welcomePraise:'');
+ const next=focus?.note||target?.goal;
+ const planned=onePlan(name),req=oneRequest(name),doneOne=oneHistory(name).filter(x=>x.reviewId);
+ const plans=nextTraining(ownPlans());
+ return heading('Verified parent or carer · Jo Morgan','Eli’s pathway','Read-only view of Eli’s published plans, logged sessions and coach feedback.')+
+ playerKit(false)+
+ '<section class="card section skills-coach" aria-label="Current coaching summary">'+
+ '<div class="skills-coach-item"><span class="icon-tile">'+icon('check',18)+'</span><div><h2>What went well</h2><p>'+e(positive||'Coach praise will appear here once published.')+'</p></div></div>'+
+ '<div class="skills-coach-item"><span class="icon-tile">'+icon('flag',18)+'</span><div><h2>Current focus</h2><p>'+e(next||'No active target set yet.')+'</p></div></div></section>'+
+ '<section class="section"><h2 class="section-title block-title">1:1 coaching</h2>'+
+ (planned?oneCard(planned):req?'<article class="card"><div class="eyebrow">Requested by Eli</div><h3 class="card-title">'+e(skillName(req))+'</h3><p class="mini">Waiting for Coach Alex to add a session date and drills.</p></article>':doneOne.length?oneCard(doneOne[0],true):'<div class="card empty">No 1:1 sessions requested or planned right now.</div>')+'</section>'+
+ '<section class="section"><h2 class="section-title block-title">Assigned sessions &amp; logs</h2><div class="stack">'+
+ plans.map(p=>{const l=ownLog(p);return '<article class="card"><div class="row"><span class="icon-tile">'+icon(categories[p.category])+'</span><div>'+tag(isGym(p)?'Gym':p.category)+'<h3 class="card-title">'+e(p.title)+'</h3><p class="mini">'+e(p.personal?'My gym session':p.duration+' min · '+dateText(p.when))+'</p></div>'+(l?tag(names[l.status],'good'):tag('Assigned','dim'))+'</div>'+(l?'<div class="line">'+sessionResults(l)+'</div>':'')+'</article>';}).join('')+'</div></section>'+
+ (reviews.length?'<section class="section"><h2 class="section-title block-title">Published coach feedback</h2><div class="stack">'+reviews.map(reviewCard).join('')+'</div></section>':'')+
+ foot();
+}
+const routes={today,'coach-feedback':playerFeedbackPage,parent:parentView,'one-to-one':oneToOne,'one-calendar':()=>oneCalendar(),'coach-calendar':()=>oneCalendar(true),'coach-one':oneCoach,train:()=>train(trainingView),gym,field,fitness,progress,skills:progress,skill:skillPage,'training-results':trainingResultsPage,fuel,'coach-fuel':coachFuel,profile:myProfile,'gym-builder':gymBuilder,results:savedResults,pathways:key=>pathwayPage(key),'coach-pathways':(index,key)=>pathwayPage(key,index),'edit-pathways':editPathwayInfo,'position-plan':arg=>playerProfile(arg??'0'),session,desk:coachHome,player:staffPlayer,programmes,pack:coachPack,builder:()=>editor(),preview:()=>editor(true),reviews,review,observe};
 
 const gymExerciseGroups=[
  ['Lower body',[
@@ -1934,7 +2049,7 @@ function render(focus=false){
   return render(focus);
  }
  if(!Object.hasOwn(routes,name))name='today';
- const nextRole=['desk','player','coach-pathways','edit-pathways','coach-one','coach-calendar','programmes','pack','coach-fuel','builder','preview','reviews','review','position-plan','observe'].includes(name)?'coach':'player';
+ const nextRole=name==='parent'?'parent':['desk','player','coach-pathways','edit-pathways','coach-one','coach-calendar','programmes','pack','coach-fuel','builder','preview','reviews','review','position-plan','observe'].includes(name)?'coach':'player';
  if(role!==nextRole)clearToast();
  role=nextRole;
  if(name==='edit-pathways'&&arg!=='manage'){
@@ -1952,11 +2067,12 @@ function render(focus=false){
  nav.hidden=role!=='coach';
  nav.innerHTML=tabs.map(([r,i,l])=>'<a class="tab" '+(r===selected?'aria-current="page" ':'')+'href="#'+r+'">'+icon(i,18)+e(l)+'</a>').join('');
  document.querySelectorAll('[data-role]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===role)));
- document.querySelector('.brand').href=role==='coach'?'#desk':'#today';
+ document.querySelector('.brand').href=role==='coach'?'#desk':role==='parent'?'#parent':'#today';
  let returnLink='';
  if(role==='player'&&!['today','session','results','skill','training-results','one-calendar'].includes(name)){
   if(name==='one-to-one')returnLink=back('coach-feedback','Back to Coach feedback');
-  else if(name==='gym-builder')returnLink=back('gym','Back to Gym');
+  else if(name==='gym-builder')returnLink=back('gym/add','Back to Add a session');
+  else if(name==='gym'&&arg==='add')returnLink=back('gym','Back to Activity');
   else if(name==='field')returnLink=back('skills','Back to Skills');
   else if(name==='profile'&&arg==='edit')returnLink=back('profile','Back to Profile');
   else if(['skills','progress'].includes(name)&&arg==='profile')returnLink=back('profile','Back to Profile');
@@ -2030,6 +2146,18 @@ function restoreSkillRow(id,source){
 }
 window.addEventListener('hashchange',()=>render(true));
 document.addEventListener('click',ev=>{
+ const startBlock=ev.target.closest('[data-start-conditioning]');
+ if(startBlock&&role==='player'){
+  state.conditioningBlocks??={};
+  state.conditioningBlocks[playerName]??=[];
+  if(!state.conditioningBlocks[playerName].includes(conditioningBlock.id)){
+   state.conditioningBlocks[playerName].push(conditioningBlock.id);
+   for(const plan of blockPlans())if(!state.plans.some(existing=>existing.id===plan.id))state.plans.push(plan);
+   save();
+  }
+  go(sessionPath(blockPlans().find(plan=>!completedBlockSession(plan))??blockPlans()[0],'gym','new'));
+  return;
+ }
  const dateAction=ev.target.closest('button[data-pathway-add-date],button[data-pathway-remove-date]');
  const dateForm=dateAction?.form;
  if(dateForm?.id==='edit-pathway-dates'&&role==='coach'){
@@ -2086,7 +2214,7 @@ document.addEventListener('click',ev=>{
   if(!field){notify('Two factors selected. Change one below to use this suggestion.');return;}
   field.value=b.dataset.suggest;field.dispatchEvent(new Event('change',{bubbles:true}));field.focus();return;
  }
- if(b.dataset.role){if(b.dataset.role!==role)go(b.dataset.role==='coach'?'desk':'today');return;}
+ if(b.dataset.role){if(b.dataset.role!==role)go(b.dataset.role==='coach'?'desk':b.dataset.role==='parent'?'parent':'today');return;}
  if(b.hasAttribute('data-cancel-log')){
   const form=document.querySelector('#session-form');
   const plan=ownPlans().find(p=>p.id===form.dataset.id);
@@ -2301,11 +2429,11 @@ document.addEventListener('submit',ev=>{
    save();render(true);notify('1:1 booking saved');return;
   }
   if(!session||session.id!==f.dataset.session)return error('This session is already complete.');
-  const body=read('body'),goal=read('goal'),review=read('review');
+  const body=read('body'),goal=read('goal'),review=read('review'),stage=read('stage');
   if(!body)return error('Add your feedback.');
   if(review&&!goal)return error('Add a next target for the check-in date.');
   const now=Date.now(),id=newId('review');
-  state.reviews.unshift({id,player:name,savedAt:now,logId:null,context:'1:1 coaching',observedOn:session.date,body,goal,review,goodWork:data.has('good'),factors:[{aspect:session.skill,marker:''}]});
+  state.reviews.unshift({id,player:name,savedAt:now,logId:null,context:'1:1 coaching',observedOn:session.date,body,goal,review,goodWork:data.has('good'),factors:[{aspect:session.skill,marker:stage}]});
   session.reviewId=id;
   recordCoachUpdate(name,'feedback',id);
   save();render(true);notify('Feedback shared in 1:1');return;
