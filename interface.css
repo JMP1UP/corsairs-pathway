@@ -1,21 +1,21 @@
 /* Shared player and coach appearance. Keep dark photo colours local to Home. */
 :root {
   color-scheme: light;
-  --ink: #f4f6ef;
-  --deep: #122a21;
+  --ink: #f5f6f8;
+  --deep: #18221f;
   --panel: #fff;
-  --line: #cbd8cf;
-  --green: #00543e;
-  --text: #152e25;
-  --muted: #445e52;
-  --club-dark: #003a2c;
-  --lime: #d9ff67;
-  --mint: #e8f2ea;
-  --input-line: #748b7e;
+  --line: #d6dde2;
+  --green: #005542;
+  --text: #20292f;
+  --muted: #52616b;
+  --club-dark: #00382d;
+  --lime: #dbff70;
+  --mint: #eef5f1;
+  --input-line: #8c9ba5;
   --focus: #115f86;
 }
 html { scroll-padding-block: 12px 82px; }
-body { background: #e3ebe2; font-size: 16px; }
+body { background: #f5f6f8; font-size: 16px; }
 .app { max-width: 850px; border-color: var(--line); box-shadow: none; }
 main { padding: 14px clamp(14px,4vw,29px) 25px; }
 .mast { padding: 11px clamp(12px,4vw,29px); color: #fff; background: var(--club-dark); border-bottom: 3px solid #87b894; }
@@ -82,17 +82,14 @@ input, textarea, select { background: #fff; border-color: var(--input-line); col
 .note-fold > summary, .exercise-guide > summary, .matrix-kudos, .one-next, .skill-change strong { color: var(--green); }
 .plan-drill, .suggestions, .skill-body .timeline .card, .safeguard-fold { background: #eff5ee; border-color: var(--line); }
 .meter { background: #dbe8dd; }
-.target-card, .one-hub-card, .selected-review, .home-target, .gym-door, .result { background: #eaf4ea; color: var(--text); border-color: #96b6a0; }
+.target-card, .one-hub-card, .selected-review, .home-target, .gym-door, .result { background: #eef6f1; color: var(--text); border-color: #b5d2c0; }
 .selected-review .attempt-result { color: var(--green); }
 .home-target { padding-block: 10px; border-inline-start: 4px solid var(--green); }
-.home-assignment { background: #edfad5; border-color: #84a763; }
-.home-assignment .icon-tile { background: #d6efb0; color: var(--club-dark); }
-.home-target-copy > strong { font-size: 13px; }
+.home-assignment { background: #eef6f1; border-color: #b5d2c0; }
+.home-assignment .icon-tile { background: #dcefe2; color: var(--club-dark); }
+.home-target-copy > strong { font-size: 13px; color: var(--green); }
 .home-target-copy > span { font-size: 16px; }
-.coaching-tile { --chapter: #e3f2e7; --chapter-ink: #00543e; }
-.gym-tile { --chapter: #eef5d8; --chapter-ink: #42611c; }
-.skills-tile { --chapter: #e0eff6; --chapter-ink: #225c75; }
-.food-tile { --chapter: #faeddb; --chapter-ink: #784b1e; }
+.coaching-tile, .gym-tile, .skills-tile, .food-tile { --chapter: #eef5f1; --chapter-ink: #005542; }
 .today-tiles { gap: 8px; }
 .today-tile, .today-tile + .today-tile {
   background: white; border: 1px solid var(--line); border-radius: 10px;
@@ -434,4 +431,7 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
  .sc-activity { padding:15px; }
  .sc-filter a { padding-inline:11px; }
  .sc-session-choices a { padding:15px 12px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 }

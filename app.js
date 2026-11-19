@@ -3,6 +3,7 @@ const icons={
 home:'<path d="m3 10 9-7 9 7v10H3zM9 20v-6h6v6"/>',
 train:'<path d="M3 9v6m4-9v12m10-12v12m4-9v6M7 12h10"/>',
 trend:'<path d="M3 4v16h18M7 15l4-4 4 2 5-6m-4 0h4v4"/>',
+rugby:'<ellipse cx="12" cy="12" rx="8.5" ry="5.3" transform="rotate(-35 12 12)"/><path d="M7 17 17 7M9.8 9.8l2.2 2.2m-.7-3.6 2.2 2.2m-3.6.7 2.2 2.2"/>',
 fuel:'<path d="M12 6c1-3 3-3 5-3-1 3-3 4-5 4M12 9c-7-5-12 3-7 9 2 3 4 4 7 2 3 2 5 1 7-2 5-6 0-14-7-9Z"/>',
 users:'<circle cx="9" cy="8" r="3"/><path d="M2 20v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2zm15-15a3 3 0 0 1 0 6m1 2a5 5 0 0 1 4 5v2"/>',
 clip:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v4H9zM9 12h6m-6 4h6"/>',
@@ -264,12 +265,12 @@ function homeAssignedSession(){
   '<span>'+e(next.title)+'</span></span>'+icon('arrow',16)+'</a>';
 }
 function today(){
- const {next}=playerCoachSnapshot(playerName);
- const work=next?'<a class="home-target" href="#coach-feedback"><span class="icon-tile">'+icon('flag',18)+'</span>'+
- '<span class="home-target-copy"><strong>Work on next</strong><span>'+e(next)+'</span></span>'+icon('arrow',16)+'</a>':'';
+ const {next,focus}=playerCoachSnapshot(playerName);
+ const work=next?'<a class="home-target" href="#'+(focus?.skill?skillPath(focus.skill,'today'):'coach-feedback')+'"><span class="icon-tile">'+icon('flag',18)+'</span>'+
+ '<span class="home-target-copy"><strong>Work on next'+(focus?.skill?' · '+e(skillName(focus.skill)):'')+'</strong><span>'+e(next)+'</span></span>'+icon('arrow',16)+'</a>':'';
  return playerKit(true)+homeAssignedSession()+work+
  playerPathwayUpdates()+homeLatestProgress()+'<nav class="section today-tiles" aria-label="Player sections">'+
- todayTile('skills','trend','Rugby skills','skills-tile')+
+ todayTile('skills','rugby','Rugby skills','skills-tile')+
  todayTile('gym','train','Strength & conditioning','gym-tile strength-tile')+
  todayTile('coach-feedback','chat','Coach feedback','coaching-tile')+
  todayTile('fuel','fuel','Food & hydration','food-tile')+'</nav>'+
@@ -883,14 +884,16 @@ function resultPlot(series,selectedId){
  const start=selectedIndex<8?0:Math.min(selectedIndex-3,series.points.length-8);
  const points=series.points.slice(start,start+8).reverse();
  const values=points.map(p=>p.value),min=Math.min(...values),max=Math.max(...values);
- const coords=points.map((p,i)=>[points.length===1?175:53+i*245/(points.length-1),max===min?55:81-(p.value-min)*52/(max-min)]);
+ const timed=series.unit==='s';
+ const coords=points.map((p,i)=>[points.length===1?175:53+i*245/(points.length-1),max===min?55:timed?29+(p.value-min)*52/(max-min):81-(p.value-min)*52/(max-min)]);
  const line=coords.map(pair=>pair.join(',')).join(' ');
  const dots=coords.map(([x,y],i)=>{
   const selected=Boolean(selectedId&&points[i].logId===selectedId);
   return '<circle'+(selected?' class="selected-point"':'')+' cx="'+x+'" cy="'+y+'" r="'+(selected?6:i===coords.length-1?5:3.5)+'"></circle>';
  }).join('');
+ const topVal=timed?min:max,botVal=timed?max:min;
  const scale=max===min?'<text x="4" y="59">'+e(resultNumber.format(max))+'</text>':
-  '<text x="4" y="33">'+e(resultNumber.format(max))+'</text><text x="4" y="85">'+e(resultNumber.format(min))+'</text>';
+  '<text x="4" y="33">'+e(resultNumber.format(topVal))+'</text><text x="4" y="85">'+e(resultNumber.format(botVal))+'</text>';
  return '<svg class="result-plot" viewBox="0 0 320 104" aria-hidden="true"><path class="result-grid" d="M49 29H300M49 55H300M49 81H300"/>'+scale+'<polyline points="'+line+'"/>'+dots+'</svg>'+
  (points.length===1?'<p class="mini">Log this again to see how it changes.</p>':'<div class="chart-dates" aria-hidden="true"><span>'+e(resultDate.format(points[0].at))+'</span><span>'+e(resultDate.format(points.at(-1).at))+'</span></div>');
 }
@@ -1065,10 +1068,6 @@ const foodTopics={
   'Try eggs, fish, chicken, beans, lentils, tofu or yoghurt. Choose foods you enjoy and mix them up across the week.',
   'Add beans to a jacket potato, stir lentils into pasta sauce, or put yoghurt with fruit.'
  ],ideas:['Egg on toast','Jacket potato with beans','Tofu and vegetable rice bowl','Plain yoghurt with fruit']}
-};
-foodTopics.meals={
- label:'Meal ideas',heading:'Meals and snacks to try',tips:[],
- ideas:['Jacket potato with beans','Rice with chicken or tofu and vegetables','Egg or hummus sandwich and fruit','Yoghurt and banana']
 };
 const foodGuideDrafts=new Map();
 const extraFoodTopics=()=>Object.entries(state.foodGuide??{}).filter(([id])=>id.startsWith('topic-'));
