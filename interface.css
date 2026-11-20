@@ -297,6 +297,32 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .engine-players .check > span { display:grid; gap:4px; }
 .engine-players small { font-size:14px; font-weight:400; }
 .engine-player-progress { display:grid; gap:16px; }
+.skill-setup-list { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+.skill-setup-list > li { padding:16px; background:white; border:1px solid var(--line); border-radius:12px; }
+.skill-setup-list > li > a { display:grid; gap:4px; margin-bottom:12px; }
+.skill-setup-list strong { font-size:20px; }
+.skill-setup-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.skill-setup-actions button { min-height:44px; padding:9px 12px; font:700 14px/1.2 system-ui,sans-serif; background:white; border:1px solid #8c9ba5; border-radius:8px; color:#005542; }
+.skill-setup-actions button:disabled { opacity:.45; }
+.profile-rating-list { border:1px solid var(--line); background:white; border-radius:12px; overflow:hidden; }
+.profile-rating-row + .profile-rating-row { border-top:1px solid var(--line); }
+.profile-rating-row > summary { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:16px; cursor:pointer; min-height:68px; }
+.profile-rating-row > summary > span:first-child { font-size:18px; font-weight:750; }
+.profile-rating-score { color:#245d96; text-align:right; flex:none; font-weight:750; font-size:16px; max-width:45%; }
+.profile-rating-score small { display:block; font-size:14px; font-weight:400; }
+.profile-rating-row[open] > summary { background:#edf5ff; }
+.profile-inline-rating { border-top:1px solid var(--line); padding:16px; }
+.profile-inline-rating label { font-size:16px; }
+.profile-levels { margin:0; padding:0; border:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.profile-levels legend { padding:0; margin-bottom:8px; font-weight:700; }
+.profile-levels label { position:relative; display:grid; grid-template-columns:1fr 20px; gap:8px; align-items:start; min-height:86px; padding:10px; border:1px solid #becbd6; border-radius:8px; background:white; cursor:pointer; }
+.profile-levels input { grid-column:2; grid-row:1; width:18px; height:18px; min-height:18px; margin:0; accent-color:#245d96; }
+.profile-levels label:has(input:checked) { background:#edf5ff; border:2px solid #245d96; padding:9px; }
+.profile-levels strong { grid-column:1; grid-row:1; font-size:20px; color:#245d96; }
+.profile-levels span { grid-column:1/-1; grid-row:2; font-size:14px; line-height:1.2; overflow-wrap:normal; word-break:normal; }
+.skill-rating-heading { margin-bottom:12px; font-size:24px; }
+#skill-definition-config label { font-size:16px; }
+@media(min-width:600px) { .profile-levels { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 .engine-player-progress progress,.engine-library-card progress,.engine-library progress { width:100%; height:10px; accent-color:#005542; }
 .engine-picker button,.engine-toolbar > button,.engine-row-options button,.engine-activity button,.engine-players > button { min-height:44px; padding:10px 14px; font-size:15px; font-weight:750; line-height:1.25; font-family:inherit; border:1px solid #8c9ba5; border-radius:8px; background:white; color:#005542; }
 .engine-picker button:disabled,.engine-activity button:disabled,.engine-row-options button:disabled { opacity:.5; cursor:default; }

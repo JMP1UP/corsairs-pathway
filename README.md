@@ -11,3 +11,5 @@ The coaching library is organised as Programmes → Sessions → Activities. Pro
 Food topics support recipe cards with ingredients, steps, time, servings, allergens and an optional uploaded JPG, PNG or WebP photo. Images are resized in the browser. Coaches can edit recipes and remove photos or recipes. Storage errors leave the editor draft intact.
 
 These library and recipe features are browser-local prototype data. They do not yet write to the separate Neon pilot, and do not sync between devices. Keep using fictional data in this public demo.
+
+Coach **Setup** holds the shared skill library, editable core skills and position defaults. Names and descriptions can change without changing the internal skill key, preserving ratings and history. A player's **Rate skills** screen displays these configured groups as individual rating rows; additional skills can be added to that player. Each review stores a dated level and/or note, with optional praise and coach focus. Rating drafts stay separate per player and skill during the browser visit. Shared setup and ratings in this demo are also browser-local.

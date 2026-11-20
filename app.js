@@ -451,7 +451,7 @@ function oneCoach(index,action){
  if(!name)return notFound('desk');
  const focus=oneRequest(name)||state.playerFocus[name],session=onePlan(name),defaultSkill=session?.skill??focus??'';
  const drills=session?.drills??[];
- const planForm='<form id="one-plan-form" class="card form" data-index="'+index+'"><label>Skill<select name="skill" required>'+opt('',defaultSkill,'Choose a skill')+Object.keys(factors).map(x=>opt(x,defaultSkill)).join('')+'</select></label>'+
+ const planForm='<form id="one-plan-form" class="card form" data-index="'+index+'"><label>Skill<select name="skill" required>'+opt('',defaultSkill,'Choose a skill')+Object.keys(factors).map(x=>opt(x,defaultSkill,skillName(x))).join('')+'</select></label>'+
  '<label>Meeting type<select name="format">'+opt('pitch',session?.format||'pitch','In person')+opt('call',session?.format,'Coaching call')+'</select></label>'+
  '<div class="one-booking-fields"><label>Date<input name="date" type="date" required value="'+e(session?.date??londonToday())+'"></label>'+
  '<label>Time (optional)<input name="time" type="time" value="'+e(session?.time??'')+'"></label></div>'+
@@ -678,7 +678,7 @@ function playerProfile(arg){
  '<div class="line"><strong>Training focus: '+e(p.focus||'To discuss')+'</strong><p class="mini">Position to try: '+e(p.explore||'To discuss')+'</p></div>')+'</section>'+
  '<section class="card section"><div class="eyebrow">Player preferences</div>'+
  (staff?'<p class="details">'+e(p.preferred||'None set')+'</p>':preferencesCard())+'</section>'+
- '<section class="section"><div class="section-head"><h2 class="section-title">Position tips</h2></div><div class="stack">'+(tips.map(pos=>'<article class="card"><h3 class="activity-name">'+e(pos)+'</h3><p class="details">'+e(positionTips[pos])+'</p><div class="skill-shortcuts">'+positionFactors[pos].map(x=>staff?tag(x,'dim'):skillButton(x)).join('')+'</div></article>').join('')||'<div class="card empty">Choose a position to see ideas to work on.</div>')+'</div></section>'+foot();
+ '<section class="section"><div class="section-head"><h2 class="section-title">Position tips</h2></div><div class="stack">'+(tips.map(pos=>'<article class="card"><h3 class="activity-name">'+e(pos)+'</h3><p class="details">'+e(positionTips[pos])+'</p><div class="skill-shortcuts">'+positionFactors[pos].map(x=>staff?tag(skillName(x),'dim'):skillButton(x)).join('')+'</div></article>').join('')||'<div class="card empty">Choose a position to see ideas to work on.</div>')+'</div></section>'+foot();
 }
 function mediaUrl(input){
  try{const u=new URL(input);return u.protocol==='https:'&&!u.username&&!u.password?u.href:'';}catch{return '';}
@@ -730,7 +730,7 @@ function setSummary(z){
  return (z.sets??[]).map((s,i)=>s?.reps!==''&&s?.reps!=null?'Set '+(i+1)+' · '+e(s.reps)+' reps'+(s.load!==''&&s.load!=null?' · '+e(s.load)+' kg':''):'').filter(Boolean).join('<br>');
 }
 
-const skillButton=x=>'<button class="skill-chip" type="button" data-open-skill="'+e(x)+'">'+e(x)+' '+icon('arrow',13)+'</button>';
+const skillButton=x=>'<button class="skill-chip" type="button" data-open-skill="'+e(x)+'">'+e(skillName(x))+' '+icon('arrow',13)+'</button>';
 const skillRows=new Map(Object.keys(factors).map((x,i)=>[x,'factor-'+i]));
 function observationsFor(aspect){
  const real=state.reviews.filter(r=>r.player==='Eli Morgan'&&r.factors?.some(f=>f.aspect===aspect));
@@ -1401,7 +1401,7 @@ function openCoachReview(index,attempt){
 }
 function coachPlayerTabs(index,active){
  const route='player/'+index;
- const tabs=[['feedback','Feedback',route],['target','Target',route+'/target'],['skills','Profile skills',route+'/profile-skills'],['activity','Activity',route+'/activity']];
+ const tabs=[['feedback','Feedback',route],['target','Target',route+'/target'],['skills','Rate skills',route+'/profile-skills'],['activity','Activity',route+'/activity']];
  return '<nav class="coach-player-tabs" aria-label="Player tools">'+tabs.map(([key,label,path])=>
   '<a class="secondary" href="#'+path+'" '+(active===key?'aria-current="page" ':'')+'>'+label+'</a>').join('')+'</nav>';
 }
@@ -1547,7 +1547,7 @@ function reviews(){
 function suggestions(player,position){
  const p=state.profiles[player]??{},roles=position?[position]:[...new Set([p.focus,p.explore].filter(Boolean))];
  return roles.length?'<p class="mini">Suggested factors · choose only what you saw</p>'+
- roles.map(pos=>'<div class="suggested-role"><strong>'+e(pos)+'</strong><div class="skill-shortcuts">'+positionFactors[pos].map(x=>'<button type="button" class="skill-chip" data-suggest="'+e(x)+'">'+e(x)+'</button>').join('')+'</div></div>').join(''):
+ roles.map(pos=>'<div class="suggested-role"><strong>'+e(pos)+'</strong><div class="skill-shortcuts">'+positionFactors[pos].map(x=>'<button type="button" class="skill-chip" data-suggest="'+e(x)+'">'+e(skillName(x))+'</button>').join('')+'</div></div>').join(''):
  '<p class="mini">No position focus set yet. Choose any observed factor below.</p>';
 }
 function optionalNextTarget(){
@@ -1557,7 +1557,7 @@ function optionalNextTarget(){
 }
 const praiseField='<label class="check"><input type="checkbox" name="good">Highlight good work</label>';
 function factorPicker(i){
- return '<fieldset class="factor-pick"><legend>'+(i===1?'Skill (optional)':'Second skill (optional)')+'</legend><label>Skill or behaviour<select name="factor'+i+'">'+opt('','','Choose an area')+Object.keys(factors).map(x=>opt(x,'')).join('')+'</select></label><p class="mini" data-factor-hint="factor'+i+'">Choose something you observed in training or a match.</p><label>Development level<select name="marker'+i+'">'+opt('','','Feedback only')+markers.map(x=>opt(x,'')).join('')+'</select></label></fieldset>';
+ return '<fieldset class="factor-pick"><legend>'+(i===1?'Skill (optional)':'Second skill (optional)')+'</legend><label>Skill or behaviour<select name="factor'+i+'">'+opt('','','Choose an area')+Object.keys(factors).map(x=>opt(x,'',skillName(x))).join('')+'</select></label><p class="mini" data-factor-hint="factor'+i+'">Choose something you observed in training or a match.</p><label>Development level<select name="marker'+i+'">'+opt('','','Feedback only')+markers.map(x=>opt(x,'')).join('')+'</select></label></fieldset>';
 }
 function observe(){
  return back('reviews','Back to Reviews')+compactHeader('New player review','chat','coaching-tile')+reviewForm('', '', true)+foot();
@@ -2105,7 +2105,7 @@ function render(focus=false){
   return render(focus);
  }
  if(!Object.hasOwn(routes,name))name='today';
- const nextRole=name==='parent'?'parent':['desk','player','coach-pathways','edit-pathways','coach-one','coach-calendar','programmes','pack','coach-fuel','coach-recipe','programme-editor','programme-view','session-editor','activity-editor','programme-assign','builder','preview','reviews','review','position-plan','observe'].includes(name)?'coach':'player';
+ const nextRole=name==='parent'?'parent':['desk','player','coach-pathways','edit-pathways','coach-one','coach-calendar','programmes','pack','coach-fuel','coach-recipe','skill-config','skill-definition','programme-editor','programme-view','session-editor','activity-editor','programme-assign','builder','preview','reviews','review','position-plan','observe'].includes(name)?'coach':'player';
  if(role!==nextRole)clearToast();
  role=nextRole;
  if(name==='edit-pathways'&&arg!=='manage'){
@@ -2117,8 +2117,8 @@ function render(focus=false){
   }
  }
  const pathwayRoute='edit-pathways';
- const tabs=role==='coach'?[['desk','users','Squad'],['programmes','clip','Programmes'],['coach-fuel','fuel','Food'],[pathwayRoute,'flag','Pathways']]:[];
- const selected=({'coach-pathways':'desk','edit-pathways':pathwayRoute,'coach-one':'desk','coach-calendar':'desk',player:'desk','position-plan':'desk',reviews:'desk',review:'desk',observe:'desk',pack:'programmes','coach-recipe':'coach-fuel','programme-editor':'programmes','programme-view':'programmes','session-editor':'programmes','activity-editor':'programmes','programme-assign':'programmes',builder:'programmes',preview:'programmes'})[name]??name;
+ const tabs=role==='coach'?[['desk','users','Squad'],['programmes','clip','Programmes'],['coach-fuel','fuel','Food'],[pathwayRoute,'flag','Pathways'],['skill-config','clip','Setup']]:[];
+ const selected=({'coach-pathways':'desk','edit-pathways':pathwayRoute,'coach-one':'desk','coach-calendar':'desk',player:'desk','position-plan':'desk',reviews:'desk',review:'desk',observe:'desk',pack:'programmes','coach-recipe':'coach-fuel','skill-definition':'skill-config','programme-editor':'programmes','programme-view':'programmes','session-editor':'programmes','activity-editor':'programmes','programme-assign':'programmes',builder:'programmes',preview:'programmes'})[name]??name;
  nav.className='tabs';
  nav.hidden=role!=='coach';
  nav.innerHTML=tabs.map(([r,i,l])=>'<a class="tab" '+(r===selected?'aria-current="page" ':'')+'href="#'+r+'">'+icon(i,18)+e(l)+'</a>').join('');
