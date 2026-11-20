@@ -120,6 +120,7 @@ input, textarea, select { background: #fff; border-color: var(--input-line); col
   z-index: auto; color: var(--chapter-ink,var(--green)); opacity: .8; transform: none; inset: 10px 10px auto auto;
 }
 .section-hero .tile-mark svg { width: 33px; height: 33px; }
+.app-section-header .tile-mark { width:33px; height:33px; }
 .section-hero h1 { font-size: clamp(31px,8.5vw,48px); line-height: 1.02; text-wrap: wrap; }
 .section-hero > p { color: var(--muted); font-weight: 600; font-size: 14px; margin-top: 5px; }
 .section-action { margin-top: 9px; }
@@ -229,6 +230,74 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 
 .food-more-topics { margin-bottom: 12px; }
 .food-more-topics .food-topic-nav { margin: 0; }
+.recipe-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.recipe-heading h2 { margin:0; font-size:24px; }
+.recipe-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); }
+.recipe-card { display:block; overflow:hidden; background:white; border:1px solid var(--line); border-radius:14px; color:var(--text); text-decoration:none; }
+.recipe-card img { display:block; width:100%; height:170px; object-fit:cover; }
+.recipe-card > span { display:grid; gap:6px; padding:16px; }
+.recipe-card strong { font-size:20px; line-height:1.2; }
+.recipe-card small { font-size:14px; color:var(--muted); }
+.recipe-card:hover { border-color:#ad701c; }
+.recipe-cover { display:block; width:100%; max-height:340px; object-fit:cover; border-radius:10px; margin-bottom:20px; }
+.recipe-detail h2 { margin:24px 0 10px; font-size:23px; }
+.recipe-detail .page-title { font-size:clamp(28px,6vw,44px); overflow-wrap:anywhere; }
+.recipe-detail li { margin-bottom:6px; }
+.recipe-allergens { margin-top:16px; padding:12px; border-radius:8px; background:#fff4e5; color:#71460e; }
+.recipe-photo-preview { display:block; width:100%; max-width:400px; max-height:220px; object-fit:cover; border-radius:10px; margin-bottom:10px; }
+.recipe-meta-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#edit-recipe input[type=file] { max-width:100%; padding:10px; }
+#edit-recipe label { font-size:16px; }
+.engine-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; padding:4px; background:#e9edf0; border-radius:10px; margin:18px 0 26px; }
+.engine-tabs a { display:grid; place-items:center; min-height:48px; padding:10px 4px; font-weight:750; font-size:16px; border-radius:7px; }
+.engine-tabs [aria-current] { background:white; box-shadow:0 1px 4px #182b2320; color:#005542; }
+.engine-section-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin:24px 0 16px; }
+.engine-section-heading h2 { margin:0; font-size:26px; }
+.engine-library { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:14px; margin-top:18px; }
+.engine-library-card { position:relative; display:grid; gap:10px; padding:20px; background:white; border:1px solid #cbd5df; border-radius:14px; overflow-wrap:anywhere; }
+.engine-library-card > strong { font-size:24px; line-height:1.15; }
+.engine-library-card .details { margin:0; }
+.engine-kind { font-size:14px; color:#526b1f; font-weight:750; }
+.engine-open { font-size:15px; color:#005542; font-weight:750; }
+.engine-search { display:grid; gap:6px; margin:20px 0; font-weight:700; }
+.engine-picker { display:grid; gap:12px; padding:18px; background:#eef3f7; border:1px solid #d1dce5; border-radius:12px; margin:16px 0; }
+.engine-picker > label { display:grid; gap:6px; font-size:16px; font-weight:700; }
+.engine-picker > button { justify-self:start; }
+.engine-empty { padding:24px; border:1px dashed #b4c3ce; border-radius:12px; color:#52616b; background:white; }
+.engine-empty h3 { margin-bottom:8px; color:var(--text); }
+.engine-session-list { list-style:none; padding:0; margin:16px 0; display:grid; gap:12px; }
+.engine-session-list > li { display:flex; align-items:flex-start; gap:12px; border:1px solid #cbd5df; border-radius:12px; padding:18px; background:white; }
+.engine-session-list > li > div { flex:1; min-width:0; }
+.engine-session-list h2,.engine-session-list h3 { margin:6px 0; font-size:21px; line-height:1.2; overflow-wrap:anywhere; }
+.engine-session-index { display:grid; place-items:center; background:#eef5da; color:#4f6517; width:32px; height:32px; flex:none; border-radius:50%; font-weight:800; }
+.engine-session-title { font-size:21px; font-weight:800; display:block; color:var(--text); overflow-wrap:anywhere; }
+.engine-session-list .secondary { min-height:44px; padding:10px; flex:none; }
+.engine-row-options { margin-top:10px; }
+.engine-row-options summary { font-size:14px; font-weight:700; }
+.engine-row-options .actions { margin-top:12px; }
+.engine-row-options button { font-size:14px; min-height:44px; padding:8px; }
+.engine-count { color:#52616b; font-size:20px; }
+.engine-save { margin:24px 0; }
+.engine-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:20px 0; }
+.engine-activity { background:white; border:1px solid #cbd5df; border-radius:12px; overflow:hidden; }
+.engine-activity > summary { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:18px; cursor:pointer; }
+.engine-activity > summary span { font-size:20px; font-weight:750; }
+.engine-activity > summary small { color:#52616b; font-size:14px; }
+.engine-activity > .form { padding:18px; border-top:1px solid #e0e6eb; }
+.engine-activity[open] > summary { background:#eff5e2; }
+.engine-coaching-details > .form { margin-top:14px; }
+.engine-players { display:grid; gap:0; margin:0; padding:0 16px 16px; border:1px solid #cbd5df; border-radius:12px; background:white; }
+.engine-players legend { font-weight:750; padding:0 4px; }
+.engine-players > button { justify-self:start; margin:12px 0; }
+.engine-players .check { min-height:64px; padding:12px 0; border-top:1px solid #e3e8ed; }
+.engine-players .check > span { display:grid; gap:4px; }
+.engine-players small { font-size:14px; font-weight:400; }
+.engine-player-progress { display:grid; gap:16px; }
+.engine-player-progress progress,.engine-library-card progress,.engine-library progress { width:100%; height:10px; accent-color:#005542; }
+.engine-picker button,.engine-toolbar > button,.engine-row-options button,.engine-activity button,.engine-players > button { min-height:44px; padding:10px 14px; font-size:15px; font-weight:750; line-height:1.25; font-family:inherit; border:1px solid #8c9ba5; border-radius:8px; background:white; color:#005542; }
+.engine-picker button:disabled,.engine-activity button:disabled,.engine-row-options button:disabled { opacity:.5; cursor:default; }
+[id^=engine-] label { font-size:16px; }
+@media(max-width:360px) { .engine-session-list > li { padding:14px 10px; gap:8px; } .engine-session-title { font-size:19px; } .engine-section-heading h2 { font-size:23px; } .engine-activity > summary { padding:14px; } }
 
 @media(min-width:480px) {
  .today-tile, .today-tile + .today-tile { grid-template-columns:auto minmax(0,1fr); min-height:82px; padding:12px 30px 12px 12px; gap:10px; }

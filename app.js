@@ -626,7 +626,7 @@ function conditioning(subpage,filter='all',selectedLog){
   return '<a class="sc-activity'+(selectedLog===log.id?' selected-attempt':'')+'" href="#'+sessionPath(plan,'gym-history'+(filter==='all'?'':'-'+filter),log.id)+'" data-history-log="'+e(log.id)+'">'+
    '<div class="sc-activity-top"><span class="sc-activity-type">'+icon(isGym(plan)?'train':'bolt',17)+e(isGym(plan)?'Gym':'Speed & fitness')+'</span><time>'+e(resultLoggedAt.format(log.at))+'</time></div>'+
    '<h3>'+e(plan.title)+'</h3><div class="sc-log-result">'+conditioningLogResult(plan,log)+'</div>'+
-   (plan.programmeId?'<p class="mini">'+e(conditioningBlock.title)+' · Session '+(plan.programmeStep+1)+'</p>':'')+
+   (plan.programmeId?'<p class="mini">'+e(plan.programmeTitle||conditioningBlock.title)+' · Session '+(plan.programmeStep+1)+'</p>':'')+
    '<div class="sc-activity-bottom">'+tag(playerLogLabel(plan,log),log.status==='partial'?'attention':log.status==='done'?'good':'dim')+'<span>View session</span></div></a>';
  }).join('')+'</div></section>').join('');
  const finished=entries.filter(log=>log.status==='done').length;
@@ -694,6 +694,7 @@ function exerciseGuide(a,i){
  const steps=(a.instructions??'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  const media=exerciseMedia(a);
  const body=media+(a.equipment?'<p class="details"><strong>You need:</strong> '+e(a.equipment)+'</p>':'')+
+ (a.rest!==undefined?'<p class="details"><strong>Rest:</strong> '+e(a.rest)+' seconds</p>':'')+
  (steps.length?'<ol class="exercise-steps">'+steps.map(x=>'<li>'+e(x)+'</li>').join('')+'</ol>':'')+
  (a.cue?'<p class="details">'+e(a.cue)+'</p>':'');
  return body?'<details class="fold exercise-guide" '+(i===undefined?'open':'data-guide="'+i+'"')+'><summary>How to do it'+(media?'<span class="demo-label">'+(a.demoVideo?'Video demo':'Picture demo')+'</span>':'')+'</summary><div class="fold-content">'+body+'</div></details>':'';
@@ -1070,6 +1071,46 @@ const foodTopics={
  ],ideas:['Egg on toast','Jacket potato with beans','Tofu and vegetable rice bowl','Plain yoghurt with fruit']}
 };
 const foodGuideDrafts=new Map();
+const recipeDrafts=new Map();
+const topicRecipes=topic=>state.foodRecipes?.[topic]??[];
+const recipePhoto=photo=>/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo??'')?photo:'';
+function recipeCards(topic,coach=false){
+ const recipes=topicRecipes(topic);
+ return '<section class="section recipe-section"><div class="recipe-heading"><h2>Recipes</h2>'+(coach?'<a class="secondary" href="#coach-recipe/'+e(topic)+'/new">+ Add recipe</a>':'')+'</div>'+
+  (recipes.length?'<div class="recipe-grid">'+recipes.map(recipe=>'<a class="recipe-card" href="#'+(coach?'coach-recipe':'recipe')+'/'+e(topic)+'/'+e(recipe.id)+'">'+
+   (recipePhoto(recipe.photo)?'<img src="'+e(recipe.photo)+'" alt="" loading="lazy">':'')+'<span><strong>'+e(recipe.name)+'</strong><small>'+e([recipe.time?recipe.time+' min':'',recipe.serves?'Serves '+recipe.serves:''].filter(Boolean).join(' · '))+'</small>'+(coach?'<small>Edit recipe</small>':'')+'</span></a>').join('')+'</div>':coach?'<p class="details">Add a meal or snack with a photo and simple steps.</p>':'')+'</section>';
+}
+function recipePage(topic,id,coach=false){
+ const key=foodTopicKey(topic),saved=topicRecipes(key).find(item=>item.id===id),adding=id==='new';
+ if(!saved&&(!coach||!adding))return notFound(coach?'coach-fuel/'+key:'fuel/'+key);
+ const draftKey=key+':'+id;
+ const draft=recipeDrafts.get(draftKey)??{name:'',time:'',serves:'',ingredients:'',steps:'',allergens:'',photo:'',...saved};
+ if(!coach)return back('fuel/'+key,'Back to food guide')+'<article class="card recipe-detail">'+
+  (recipePhoto(saved.photo)?'<img class="recipe-cover" src="'+e(saved.photo)+'" alt="'+e(saved.name)+'">':'')+'<h1 class="page-title">'+e(saved.name)+'</h1><p class="details">'+e([saved.time?saved.time+' min':'',saved.serves?'Serves '+saved.serves:''].filter(Boolean).join(' · '))+'</p>'+
+  (saved.allergens?'<p class="recipe-allergens"><strong>Allergens</strong> '+e(saved.allergens)+'</p>':'')+'<h2>Ingredients</h2>'+foodLines(saved.ingredients.split('\n'))+'<h2>How to make it</h2><ol class="food-list">'+saved.steps.split('\n').map(step=>'<li>'+e(step)+'</li>').join('')+'</ol></article>'+foot();
+ return back('coach-fuel/'+key,'Back to food guides')+compactHeader(adding?'Add recipe':'Edit recipe','fuel','food-tile')+
+  '<form id="edit-recipe" class="form section" data-topic="'+e(key)+'" data-id="'+e(id)+'"><label>Recipe name<input name="name" maxlength="80" required value="'+e(draft.name)+'"></label>'+
+  '<div class="recipe-meta-fields"><label>Time (minutes)<input name="time" type="number" min="1" max="1440" inputmode="numeric" value="'+e(draft.time)+'"></label><label>Serves<input name="serves" type="number" min="1" max="50" inputmode="numeric" value="'+e(draft.serves)+'"></label></div>'+
+  '<label>Photo <span class="details">Optional · JPG, PNG or WebP</span><input name="photoFile" type="file" accept="image/jpeg,image/png,image/webp"></label><div data-recipe-photo>'+(recipePhoto(draft.photo)?'<img class="recipe-photo-preview" src="'+e(draft.photo)+'" alt="Recipe photo preview"><button class="secondary" type="button" data-remove-recipe-photo>Remove photo</button>':'')+'</div>'+
+  '<label>Ingredients (one per line)<textarea name="ingredients" required maxlength="2400" rows="5" placeholder="e.g. 1 banana">'+e(draft.ingredients)+'</textarea></label><label>How to make it (one step per line)<textarea name="steps" required maxlength="4000" rows="5">'+e(draft.steps)+'</textarea></label><label>Allergens <span class="details">Optional</span><input name="allergens" maxlength="200" placeholder="e.g. Milk, wheat" value="'+e(draft.allergens)+'"></label>'+
+  '<button class="primary">Save recipe</button><p class="alert" role="alert"></p></form>'+
+  (!adding?'<details class="fold section"><summary>Remove recipe</summary><div class="fold-content"><button data-delete-recipe="'+e(id)+'" data-topic="'+e(key)+'">Remove this recipe</button></div></details>':'')+foot();
+}
+function recipeValues(form){
+ const saved=recipeDrafts.get(form.dataset.topic+':'+form.dataset.id)??topicRecipes(form.dataset.topic).find(item=>item.id===form.dataset.id)??{};
+ const data=new FormData(form);
+ return {...saved,...Object.fromEntries(['name','time','serves','ingredients','steps','allergens'].map(field=>[field,String(data.get(field)??'')])),photo:saved.photo??''};
+}
+function storeRecipes(topic,recipes){
+ const previous=state.foodRecipes;
+ state.foodRecipes={...previous,[topic]:recipes};
+ try{localStorage.setItem(key,JSON.stringify(state));return true;}catch{state.foodRecipes=previous;return false;}
+}
+async function prepareRecipePhoto(file){
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024)throw Error('Choose a JPG, PNG or WebP photo under 10 MB.');
+ const url=URL.createObjectURL(file);
+ try{const img=new Image();img.src=url;await img.decode();const scale=Math.min(1,800/Math.max(img.naturalWidth,img.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);const photo=canvas.toDataURL('image/jpeg',.7);if(photo.length>400000)throw Error('Try a smaller photo.');return photo;}finally{URL.revokeObjectURL(url);}
+}
 const extraFoodTopics=()=>Object.entries(state.foodGuide??{}).filter(([id])=>id.startsWith('topic-'));
 function foodTopicKey(key){
  return Object.hasOwn(foodTopics,key)||extraFoodTopics().some(([id])=>id===key)?key:'before';
@@ -1098,7 +1139,7 @@ function fuel(topic){
  const key=foodTopicKey(topic),content=foodTopic(key);
  return compactHeader('Food & hydration','fuel','food-tile')+
   '<section aria-label="Food guide">'+foodTopicNav('fuel',key)+foodGuideCard(content)+
-  '<p class="mini food-safe">Choose foods that suit your allergies and diet.</p></section>'+foot();
+  (topicRecipes(key).length?recipeCards(key):'')+'<p class="mini food-safe">Choose foods that suit your allergies and diet.</p></section>'+foot();
 }
 function foodEditorValues(form){
  const values=new FormData(form);
@@ -1117,7 +1158,7 @@ function coachFuel(topic,mode){
  if(mode==='preview'&&!adding){
   const preview=cleanFoodGuide(values);
   return back(editorRoute,'Back to editor')+'<h1 class="page-title">Player preview</h1>'+
-   '<section class="section">'+foodGuideCard({...preview,heading:preview.heading||saved.heading})+'</section>'+foot();
+   '<section class="section">'+foodGuideCard({...preview,heading:preview.heading||saved.heading})+'</section>'+recipeCards(key)+foot();
  }
  const canRename=adding||key.startsWith('topic-');
  return (adding?back('coach-fuel','Back to food guides'):'')+
@@ -1130,7 +1171,7 @@ function coachFuel(topic,mode){
   '<label>Meal and snack ideas (one per line)<textarea name="ideas" rows="4" maxlength="1000">'+e(values.ideas)+'</textarea></label>'+
   '<div class="actions"><button class="primary">'+(adding?'Add topic':'Save guide')+'</button>'+
   (adding?'':'<a class="text-link" href="#'+editorRoute+'/preview">Preview player guide '+icon('arrow',15)+'</a>')+'</div>'+
-  '<p class="alert" role="alert"></p></form>'+
+  '<p class="alert" role="alert"></p></form>'+(adding?'':recipeCards(key,true))+
   (adding?'':fold('References','<p class="details"><a class="text-link" href="https://www.nhs.uk/live-well/eat-well/food-guidelines-and-food-labels/the-eatwell-guide/">NHS Eatwell Guide</a><br><a class="text-link" href="https://www.healthychildren.org/English/healthy-living/nutrition/Pages/Sports-Nutrition-for-Busy-Families-and-Busy-Lifestyles.aspx">American Academy of Pediatrics sports nutrition guide</a></p>','section'))+foot();
 }
 function session(id,origin,attempt){
@@ -1156,7 +1197,7 @@ function session(id,origin,attempt){
  const backRoute=['today','gym','field','fitness','train'].includes(origin)?origin:sessionOrigin(plan);
  const backLabel={today:'Home',gym:'Back to Sessions',field:'Back to Pitch sessions',fitness:'Back to Speed & fitness',train:'Back to Training'}[backRoute];
  const historyFilter={ 'gym-history':'all','gym-history-gym':'gym','gym-history-fitness':'fitness' }[origin];
- const returnLink=historyFilter?back('gym/history/'+historyFilter+(saved?'/'+saved.id:''),'Back to History'):back(backRoute,backLabel);
+ const returnLink=plan.programmeAssignment?back('player-programme/'+plan.programmeAssignment,'Back to programme'):historyFilter?back('gym/history/'+historyFilter+(saved?'/'+saved.id:''),'Back to History'):back(backRoute,backLabel);
  return returnLink+compactHeader(plan.title,gymSession?'train':'bolt',gymSession?'gym-tile':'skills-tile',null,plan.personal?'My gym session':plan.duration+' min')+banner+
  (log?'<div class="stack section">'+list+'</div>':
  '<form id="session-form" class="stack section" data-id="'+id+'" data-draft="'+draftKey+'" data-edit="'+(editing?saved.id:'')+'">'+list+
@@ -1568,7 +1609,7 @@ function parentView(){
  (reviews.length?'<section class="section"><h2 class="section-title block-title">Published coach feedback</h2><div class="stack">'+reviews.map(reviewCard).join('')+'</div></section>':'')+
  foot();
 }
-const routes={today,'coach-feedback':playerFeedbackPage,parent:parentView,'one-to-one':oneToOne,'one-calendar':()=>oneCalendar(),'coach-calendar':()=>oneCalendar(true),'coach-one':oneCoach,train:()=>train(trainingView),gym,field,fitness,progress,skills:progress,skill:skillPage,'training-results':trainingResultsPage,fuel,'coach-fuel':coachFuel,profile:myProfile,'gym-builder':gymBuilder,results:savedResults,pathways:key=>pathwayPage(key),'coach-pathways':(index,key)=>pathwayPage(key,index),'edit-pathways':editPathwayInfo,'position-plan':arg=>playerProfile(arg??'0'),session,desk:coachHome,player:staffPlayer,programmes,pack:coachPack,builder:()=>editor(),preview:()=>editor(true),reviews,review,observe};
+const routes={recipe:(topic,id)=>recipePage(topic,id),'coach-recipe':(topic,id)=>recipePage(topic,id,true),today,'coach-feedback':playerFeedbackPage,parent:parentView,'one-to-one':oneToOne,'one-calendar':()=>oneCalendar(),'coach-calendar':()=>oneCalendar(true),'coach-one':oneCoach,train:()=>train(trainingView),gym,field,fitness,progress,skills:progress,skill:skillPage,'training-results':trainingResultsPage,fuel,'coach-fuel':coachFuel,profile:myProfile,'gym-builder':gymBuilder,results:savedResults,pathways:key=>pathwayPage(key),'coach-pathways':(index,key)=>pathwayPage(key,index),'edit-pathways':editPathwayInfo,'position-plan':arg=>playerProfile(arg??'0'),session,desk:coachHome,player:staffPlayer,programmes,pack:coachPack,builder:()=>editor(),preview:()=>editor(true),reviews,review,observe};
 
 const gymExerciseGroups=[
  ['Lower body',[
@@ -2048,7 +2089,7 @@ function render(focus=false){
   return render(focus);
  }
  if(!Object.hasOwn(routes,name))name='today';
- const nextRole=name==='parent'?'parent':['desk','player','coach-pathways','edit-pathways','coach-one','coach-calendar','programmes','pack','coach-fuel','builder','preview','reviews','review','position-plan','observe'].includes(name)?'coach':'player';
+ const nextRole=name==='parent'?'parent':['desk','player','coach-pathways','edit-pathways','coach-one','coach-calendar','programmes','pack','coach-fuel','coach-recipe','programme-editor','programme-view','session-editor','activity-editor','programme-assign','builder','preview','reviews','review','position-plan','observe'].includes(name)?'coach':'player';
  if(role!==nextRole)clearToast();
  role=nextRole;
  if(name==='edit-pathways'&&arg!=='manage'){
@@ -2061,14 +2102,14 @@ function render(focus=false){
  }
  const pathwayRoute='edit-pathways';
  const tabs=role==='coach'?[['desk','users','Squad'],['programmes','clip','Programmes'],['coach-fuel','fuel','Food'],[pathwayRoute,'flag','Pathways']]:[];
- const selected=({'coach-pathways':'desk','edit-pathways':pathwayRoute,'coach-one':'desk','coach-calendar':'desk',player:'desk','position-plan':'desk',reviews:'desk',review:'desk',observe:'desk',pack:'programmes',builder:'programmes',preview:'programmes'})[name]??name;
+ const selected=({'coach-pathways':'desk','edit-pathways':pathwayRoute,'coach-one':'desk','coach-calendar':'desk',player:'desk','position-plan':'desk',reviews:'desk',review:'desk',observe:'desk',pack:'programmes','coach-recipe':'coach-fuel','programme-editor':'programmes','programme-view':'programmes','session-editor':'programmes','activity-editor':'programmes','programme-assign':'programmes',builder:'programmes',preview:'programmes'})[name]??name;
  nav.className='tabs';
  nav.hidden=role!=='coach';
  nav.innerHTML=tabs.map(([r,i,l])=>'<a class="tab" '+(r===selected?'aria-current="page" ':'')+'href="#'+r+'">'+icon(i,18)+e(l)+'</a>').join('');
  document.querySelectorAll('[data-role]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.role===role)));
  document.querySelector('.brand').href=role==='coach'?'#desk':role==='parent'?'#parent':'#today';
  let returnLink='';
- if(role==='player'&&!['today','session','results','skill','training-results','one-calendar'].includes(name)){
+ if(role==='player'&&!['today','session','results','skill','training-results','one-calendar','recipe','player-programme'].includes(name)){
   if(name==='one-to-one')returnLink=back('coach-feedback','Back to Coach feedback');
   else if(name==='gym-builder')returnLink=back('gym/add','Back to Add a session');
   else if(name==='gym'&&arg==='add')returnLink=back('gym','Back to Sessions');
@@ -2145,6 +2186,16 @@ function restoreSkillRow(id,source){
 }
 window.addEventListener('hashchange',()=>render(true));
 document.addEventListener('click',ev=>{
+ const removePhoto=ev.target.closest('[data-remove-recipe-photo]');
+ if(removePhoto&&role==='coach'){
+  const form=removePhoto.form,values=recipeValues(form);values.photo='';recipeDrafts.set(form.dataset.topic+':'+form.dataset.id,values);form.querySelector('[data-recipe-photo]').innerHTML='';form.elements.photoFile.value='';return;
+ }
+ const removeRecipe=ev.target.closest('[data-delete-recipe]');
+ if(removeRecipe&&role==='coach'){
+  const topic=removeRecipe.dataset.topic,id=removeRecipe.dataset.deleteRecipe;
+  if(!storeRecipes(topic,topicRecipes(topic).filter(recipe=>recipe.id!==id))){notify('Could not save this change. Try again.');return;}
+  recipeDrafts.delete(topic+':'+id);go('coach-fuel/'+topic);notify('Recipe removed');return;
+ }
  const startBlock=ev.target.closest('[data-start-conditioning]');
  if(startBlock&&role==='player'){
   state.conditioningBlocks??={};
@@ -2271,6 +2322,9 @@ document.addEventListener('click',ev=>{
 });
 document.addEventListener('input',ev=>{
  const input=ev.target;
+ if(input.form?.id==='edit-recipe'){
+  recipeDrafts.set(input.form.dataset.topic+':'+input.form.dataset.id,recipeValues(input.form));return;
+ }
  if(input.matches('[data-squad-search]')){
   const query=input.value.trim().toLowerCase();
   const rows=[...main.querySelectorAll('[data-squad-name]')];
@@ -2310,6 +2364,15 @@ document.addEventListener('input',ev=>{
 });
 document.addEventListener('change',ev=>{
  const t=ev.target;
+ if(t.form?.id==='edit-recipe'&&t.name==='photoFile'&&role==='coach'){
+  const form=t.form,file=t.files[0];if(!file)return;
+  const draftKey=form.dataset.topic+':'+form.dataset.id;
+  const saveButton=form.querySelector('button.primary');saveButton.disabled=true;form.dataset.photoBusy='1';form.querySelector('.alert').textContent='Preparing photo…';
+  prepareRecipePhoto(file).then(photo=>{
+   recipeDrafts.set(draftKey,{...recipeValues(form),photo});
+   if(form.isConnected){form.querySelector('[data-recipe-photo]').innerHTML='<img class="recipe-photo-preview" src="'+e(photo)+'" alt="Recipe photo preview"><button class="secondary" type="button" data-remove-recipe-photo>Remove photo</button>';form.querySelector('.alert').textContent='';}
+  }).catch(()=>{if(form.isConnected)form.querySelector('.alert').textContent='Choose a JPG, PNG or WebP photo under 10 MB.';}).finally(()=>{saveButton.disabled=false;delete form.dataset.photoBusy;});return;
+ }
  if(t.form?.id==='builder'&&t.name==='coachPreset')t.form.querySelector('[data-add-gym-preset]').disabled=!t.value;
  if(t.form?.id==='gym-session-builder'&&t.name==='preset')t.form.querySelector('[data-gym-action="preset"]').disabled=!t.value;
  if((t.name==='player'||t.name==='position')&&t.form?.id==='review-form'){
@@ -2353,6 +2416,16 @@ document.addEventListener('submit',ev=>{
   ev.preventDefault();
   submitPathway(f,ev.submitter);
   return;
+ }
+ if(f.id==='edit-recipe'){
+  ev.preventDefault();if(role!=='coach'||f.dataset.photoBusy)return;
+  const topic=foodTopicKey(f.dataset.topic),id=f.dataset.id==='new'?newId('recipe'):f.dataset.id;
+  const values=recipeValues(f),lines=text=>text.split(/\r?\n/).map(line=>line.trim()).filter(Boolean).join('\n');
+  const recipe={...values,id,name:values.name.trim(),ingredients:lines(values.ingredients),steps:lines(values.steps),allergens:values.allergens.trim(),photo:recipePhoto(values.photo)};
+  if(!recipe.name||!recipe.ingredients||!recipe.steps){f.querySelector('.alert').textContent='Add a name, ingredients and steps.';return;}
+  const recipes=topicRecipes(topic).filter(item=>item.id!==id);recipes.push(recipe);
+  if(!storeRecipes(topic,recipes)){f.querySelector('.alert').textContent='Your browser storage is full. Try a smaller photo or remove an old recipe.';return;}
+  recipeDrafts.delete(topic+':'+f.dataset.id);go('coach-fuel/'+topic);notify('Recipe saved');return;
  }
  if(!['builder','assign-pack','edit-food-guide','gym-session-builder','session-form','review-form','position-plan','preferences','target-form','player-focus','one-plan-form','one-feedback-form','skill-update','coach-profile-skills'].includes(f.id))return;
  ev.preventDefault();
