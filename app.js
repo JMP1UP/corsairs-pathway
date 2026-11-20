@@ -1252,13 +1252,13 @@ function coachPlayerActivity(name,index){
   }).join('');
   return monthDisclosure(month,entries.length,rows,monthIndex===0);
  }).join('');
- return '<section class="section coach-work"><h2 class="section-title block-title">Assignments due</h2>'+
+ return '<section class="section coach-work"><h2 class="section-title block-title">Sessions to complete</h2>'+
   '<p class="details">'+e(assignedLogSummary(activity))+'</p>'+
   (missing.length?'<div class="card coach-missing"><h3 class="activity-name">No result logged ('+missing.length+')</h3>'+
    assignmentList(visibleMissing)+
-   (earlierMissing.length?fold('Earlier assignments ('+earlierMissing.length+')',assignmentList(earlierMissing),'activity-assignments'):'')+
+   (earlierMissing.length?fold('Earlier sessions ('+earlierMissing.length+')',assignmentList(earlierMissing),'activity-assignments'):'')+
    '</div>':'')+
-  '</section><section class="section coach-work"><h2 class="section-title block-title">Session logs</h2>'+
+  '</section><section class="section coach-work"><h2 class="section-title block-title">Session history</h2>'+
   (history?'<div class="stack">'+history+'</div>':'<p class="details">No sessions logged yet.</p>')+'</section>';
 }
 const hasTrainingRecord=log=>log.status==='done'||(log.status==='partial'&&log.items?.some(entry=>entry?.status==='done'));
@@ -1274,9 +1274,9 @@ function playerActivity(name){
  return {logs,recorded,assignments,latest};
 }
 function assignedLogSummary({assignments,recorded}){
- if(!assignments.length)return 'No assignments due';
+ if(!assignments.length)return 'No sessions waiting';
  const logged=assignments.filter(plan=>recorded.has(plan.id)).length;
- return logged+' of '+assignments.length+' due '+(assignments.length===1?'assignment':'assignments')+' logged';
+ return logged+' of '+assignments.length+' due '+(assignments.length===1?'session':'sessions')+' logged';
 }
 const logMonthFormat=new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:'Europe/London'});
 function logMonths(logs){
