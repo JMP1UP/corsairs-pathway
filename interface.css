@@ -89,10 +89,13 @@ input, textarea, select { background: #fff; border-color: var(--input-line); col
 .home-assignment .icon-tile { background: #dcefe2; color: var(--club-dark); }
 .home-target-copy > strong { font-size: 13px; color: var(--green); }
 .home-target-copy > span { font-size: 16px; }
-.coaching-tile, .gym-tile, .skills-tile, .food-tile { --chapter: #eef5f1; --chapter-ink: #005542; }
+.skills-tile { --chapter:#edf5ff; --chapter-icon:#d6e8ff; --chapter-line:#b6d2f2; --chapter-ink:#245d96; }
+.gym-tile { --chapter:#f2f8df; --chapter-icon:#e0edaa; --chapter-line:#c4d88b; --chapter-ink:#506b16; }
+.coaching-tile { --chapter:#f5efff; --chapter-icon:#e7d8ff; --chapter-line:#d0baed; --chapter-ink:#7142a0; }
+.food-tile { --chapter:#fff4e5; --chapter-icon:#ffe2b8; --chapter-line:#edca95; --chapter-ink:#8a520d; }
 .today-tiles { gap: 8px; }
 .today-tile, .today-tile + .today-tile {
-  background: white; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--chapter,white); border: 1px solid var(--chapter-line,var(--line)); border-top:3px solid var(--chapter-ink,var(--green)); border-radius: 10px;
   min-height: 82px; padding: 9px 27px 9px 10px;
   display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px; align-items: center;
 }
@@ -103,7 +106,7 @@ input, textarea, select { background: #fff; border-color: var(--input-line); col
 }
 .today-tile .tile-mark {
   position: static; width: 35px; height: 35px; display: grid; place-items: center;
-  color: var(--chapter-ink); background: var(--chapter); border-radius: 8px; opacity: 1; transform: none;
+  color: var(--chapter-ink); background: var(--chapter-icon,var(--chapter)); border-radius: 8px; opacity: 1; transform: none;
 }
 .today-tile .tile-mark svg { width: 19px; height: 19px; }
 .today-tile .tile-arrow { position: absolute; top: 50%; left: auto; right: 7px; transform: translateY(-50%); color: var(--chapter-ink); }
@@ -371,7 +374,7 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .coach-missing .activity-name { margin-bottom: 4px; }
 
 /* S&C activity journal */
-.sc-page-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; margin:18px 0; }
+.sc-page-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; margin:18px 0; padding:14px; background:#f2f8df; border:1px solid #c4d88b; border-left:4px solid #506b16; border-radius:9px; }
 .sc-page-head .page-title { max-width:18ch; font-size:clamp(30px,7.4vw,46px); line-height:1.08; overflow-wrap:normal; }
 .sc-page-head .primary { white-space:nowrap; }
 .sc-stats { display:flex; gap:30px; padding:18px 0 22px; border-bottom:1px solid var(--line); }
