@@ -152,7 +152,7 @@ const dateText=value=>/^\d{4}-\d\d-\d\d$/.test(value)?new Intl.DateTimeFormat('e
 const names={done:'Completed',partial:'Part completed',skipped:'Skipped'};
 const playerLogLabel=(plan,log)=>isGym(plan)&&log.status==='partial'?'Partial gym log':names[log.status];
 const visibilityNote=(player=playerName)=>'<p class="call">Visible to '+e(player)+', verified linked parent or carer (Jo Morgan) and authorised U14 coaches.</p>';
-const safeguardingFold=()=>fold('Help &amp; safeguarding','<p class="details"><strong>Club Safeguarding Officer:</strong> Pat Taylor · safeguarding@nottinghamcorsairsrfc.com (demo contact). Speak to your parent, carer or the Club Safeguarding Officer if anything worries you. Safeguarding and medical matters are handled outside this app.</p>','safeguard-fold');
+const safeguardingFold=()=>fold('Help &amp; safeguarding','<p class="details"><strong>Team Manager - John Partridge</strong>. Speak to your parent, carer or team manager if anything worries you. Safeguarding and medical matters are handled outside this app.</p>','safeguard-fold');
 const foot=()=>safeguardingFold()+'<p class="note">Prototype · fictional players · '+(storageOK?'changes stay in this browser':'changes last until this page closes')+'</p>';
 const notFound=(to)=>heading('Corsairs pathway','That page moved')+'<div class="actions">'+back(to,'Back to your dashboard')+'</div>';
 
