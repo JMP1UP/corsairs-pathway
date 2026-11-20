@@ -1789,7 +1789,7 @@ function savePathwayRecord(player,key,patch){
  save();
 }
 function pathwayFeedback(key,record){
- const criteria=pathwayCatalog()[key].criteria;
+ const criteria=pathwayInfo(key).criteria;
  const criterion=criteria.find(([id])=>id===record.feedbackCriterion&&record.progress?.[id])||
   criteria.find(([id])=>record.progress?.[id]?.note)||
   criteria.find(([id])=>record.progress?.[id]?.stage);
@@ -1871,6 +1871,13 @@ function pathwayDateFields({label='',date=''}={}){
 }
 const pathwayDateDrafts=new Map();
 const pathwayDetailDrafts=new Map();
+const pathwayCriteriaDrafts=new Map();
+function pathwayCriterionFields([id,title,description]){
+ return '<details class="pathway-criteria-editor" data-criterion-id="'+e(id)+'"><summary>'+e(title||'New criterion')+'</summary><div class="form"><label>Criterion name<input name="criterionTitle" required maxlength="90" value="'+e(title)+'"></label><label>What players see<textarea name="criterionDescription" rows="3" maxlength="600">'+e(description)+'</textarea></label><button type="button" class="quiet" data-pathway-remove-criterion>Remove criterion</button></div></details>';
+}
+function readPathwayCriteria(form){
+ return [...form.querySelectorAll('[data-criterion-id]')].map(row=>[row.dataset.criterionId,row.querySelector('[name=criterionTitle]').value,row.querySelector('[name=criterionDescription]').value]);
+}
 function readPathwayDates(form){
  const data=new FormData(form),labels=data.getAll('dateLabel');
  return data.getAll('dateValue').map((date,i)=>({label:labels[i],date}));
@@ -1932,6 +1939,7 @@ function editPathwayInfo(key,index){
  const context=player?'/'+Number(index):'';
  const dates=pathwayDateDrafts.get(key)??info.dates??[];
  const details=pathwayDetailDrafts.get(key)??info;
+ const criteria=pathwayCriteriaDrafts.get(key)??info.criteria;
  return (player?back('coach-pathways/'+Number(index)+'/'+key,'Back to '+player+'’s pathway'):'')+
   compactHeader('Edit pathways','flag','coaching-tile')+
   '<nav class="actions section pathway-tabs" aria-label="Edit rugby pathways">'+activePathways().map(([id,option])=>
@@ -1950,7 +1958,15 @@ function editPathwayInfo(key,index){
   '<label>About this pathway<textarea name="intro" rows="3" maxlength="600">'+e(details.intro)+'</textarea></label>'+
   '<label>Guidance link text<input name="sourceLabel" maxlength="100" value="'+e(details.sourceLabel)+'"></label>'+
   '<label>Guidance URL<input name="source" type="url" maxlength="400" value="'+e(details.source)+'"></label>'+
-  '<p class="alert" role="alert"></p><button class="primary">Save pathway details</button></form></section>'+foot();
+  '<p class="alert" role="alert"></p><button class="primary">Save pathway details</button></form>'+
+  '<form class="card section form" id="edit-pathway-criteria" data-key="'+e(key)+'"><h3 class="activity-name">What they look for</h3><div class="stack" data-pathway-criteria>'+criteria.map(pathwayCriterionFields).join('')+'</div><p class="mini">Removing a criterion hides it. Previous player feedback stays saved.</p><div class="actions"><button type="button" class="secondary" data-pathway-add-criterion>+ Add criterion</button><button class="primary">Save criteria</button></div><p class="alert" role="alert"></p></form></section>'+foot();
+}
+function submitPathwayCriteria(form){
+ const key=form.dataset.key;if(role!=='coach'||!isActivePathway(key))return;
+ const criteria=readPathwayCriteria(form).map(([id,title,description])=>[id,title.trim(),description.trim()]);
+ if(criteria.some(([,title])=>!title)){form.querySelector('.alert').textContent='Name each criterion before saving.';return;}
+ if(new Set(criteria.map(([,title])=>title.toLowerCase())).size!==criteria.length){form.querySelector('.alert').textContent='Give each criterion a different name.';return;}
+ const records=(state.pathwayInfo??={});records[key]={...records[key],criteria};pathwayCriteriaDrafts.delete(key);save();form.querySelector('.alert').textContent='';notify('Pathway criteria saved');
 }
 function submitPathwayDates(form){
  const key=form.dataset.key;
@@ -2062,7 +2078,7 @@ function submitPathway(form,submitter){
   notify(message);
   return;
  }
- const criterion=pathwayCatalog()[key].criteria.find(([id])=>id===form.dataset.criterion);
+ const criterion=pathwayInfo(key).criteria.find(([id])=>id===form.dataset.criterion);
  if(!criterion||!pathwayCanReview(record))return;
  const [id]=criterion;
  const data=new FormData(form),stage=String(data.get('stage')??''),note=String(data.get('note')??'').trim();
@@ -2186,6 +2202,15 @@ function restoreSkillRow(id,source){
 }
 window.addEventListener('hashchange',()=>render(true));
 document.addEventListener('click',ev=>{
+ const criterionButton=ev.target.closest('button[data-pathway-add-criterion],button[data-pathway-remove-criterion]');
+ if(criterionButton?.form?.id==='edit-pathway-criteria'&&role==='coach'){
+  const form=criterionButton.form,container=form.querySelector('[data-pathway-criteria]');
+  if(criterionButton.hasAttribute('data-pathway-add-criterion')){
+   if(container.children.length>=20){form.querySelector('.alert').textContent='A pathway can have up to 20 criteria.';return;}
+   container.insertAdjacentHTML('beforeend',pathwayCriterionFields([newId('criterion'),'','']));const row=container.lastElementChild;row.open=true;row.querySelector('input').focus();
+  }else criterionButton.closest('[data-criterion-id]').remove();
+  pathwayCriteriaDrafts.set(form.dataset.key,readPathwayCriteria(form));return;
+ }
  const removePhoto=ev.target.closest('[data-remove-recipe-photo]');
  if(removePhoto&&role==='coach'){
   const form=removePhoto.form,values=recipeValues(form);values.photo='';recipeDrafts.set(form.dataset.topic+':'+form.dataset.id,values);form.querySelector('[data-recipe-photo]').innerHTML='';form.elements.photoFile.value='';return;
@@ -2322,6 +2347,10 @@ document.addEventListener('click',ev=>{
 });
 document.addEventListener('input',ev=>{
  const input=ev.target;
+ if(input.form?.id==='edit-pathway-criteria'){
+  pathwayCriteriaDrafts.set(input.form.dataset.key,readPathwayCriteria(input.form));
+  if(input.name==='criterionTitle')input.closest('[data-criterion-id]').querySelector('summary').textContent=input.value||'New criterion';return;
+ }
  if(input.form?.id==='edit-recipe'){
   recipeDrafts.set(input.form.dataset.topic+':'+input.form.dataset.id,recipeValues(input.form));return;
  }
@@ -2412,6 +2441,7 @@ document.addEventListener('submit',ev=>{
  if(f.id==='add-pathway'||f.matches('.pathway-visibility')){ev.preventDefault();submitPathwayManagement(f);return;}
  if(f.id==='edit-pathway-dates'){ev.preventDefault();submitPathwayDates(f);return;}
  if(f.id==='edit-pathway-info'){ev.preventDefault();submitPathwayInfo(f);return;}
+ if(f.id==='edit-pathway-criteria'){ev.preventDefault();submitPathwayCriteria(f);return;}
  if(f.matches('#pathway-interest,#pathway-place,.pathway-criterion-form')){
   ev.preventDefault();
   submitPathway(f,ev.submitter);
