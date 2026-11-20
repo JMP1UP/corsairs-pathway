@@ -96,12 +96,12 @@ input, textarea, select { background: #fff; border-color: var(--input-line); col
 .today-tiles { gap: 8px; }
 .today-tile, .today-tile + .today-tile {
   background: var(--chapter,white); border: 1px solid var(--chapter-line,var(--line)); border-top:3px solid var(--chapter-ink,var(--green)); border-radius: 10px;
-  min-height: 82px; padding: 9px 27px 9px 10px;
-  display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px; align-items: center;
+  min-height: 108px; padding: 11px;
+  display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; align-items: center; align-content:start;
 }
 .today-tile::before, .today-tile::after, .section-hero::before { display: none; }
 .today-tile h2 {
-  color: var(--text); font: 800 clamp(13px,3.8vw,20px)/1.15 var(--body); letter-spacing: 0;
+  color: var(--text); font: 800 clamp(16px,3.8vw,20px)/1.15 var(--body); letter-spacing: 0;
   text-wrap: wrap; overflow-wrap: anywhere;
 }
 .today-tile .tile-mark {
@@ -109,7 +109,7 @@ input, textarea, select { background: #fff; border-color: var(--input-line); col
   color: var(--chapter-ink); background: var(--chapter-icon,var(--chapter)); border-radius: 8px; opacity: 1; transform: none;
 }
 .today-tile .tile-mark svg { width: 19px; height: 19px; }
-.today-tile .tile-arrow { position: absolute; top: 50%; left: auto; right: 7px; transform: translateY(-50%); color: var(--chapter-ink); }
+.today-tile .tile-arrow { position: absolute; top: 17px; left: auto; right: 11px; transform: none; color: var(--chapter-ink); }
 .today-tile .tile-arrow svg { width: 15px; height: 15px; }
 .today-tile:hover { border-color: var(--chapter-ink); }
 .section-hero {
@@ -209,11 +209,8 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .history-empty p { margin-bottom: 4px; }
 .gym-safety { margin: 12px 0 0; color: #70470d; }
 @media (max-width: 355px) {
-  .today-tile, .today-tile + .today-tile { gap: 6px; padding-left: 7px; padding-right: 22px; }
+  .today-tile, .today-tile + .today-tile { gap: 8px; }
   .today-tile .tile-mark { width: 29px; height: 29px; }
-  .today-tile.strength-tile { column-gap: 4px; padding-inline-end: 18px; }
-  .strength-tile .tile-mark { width: 24px; height: 24px; }
-  .strength-tile .tile-arrow { right: 3px; }
   .switch button { padding-inline: 6px; }
   .brand { gap: 5px; }
 }
@@ -233,7 +230,11 @@ body:has(#nav:not([hidden])) #toast { bottom: calc(68px + env(safe-area-inset-bo
 .food-more-topics { margin-bottom: 12px; }
 .food-more-topics .food-topic-nav { margin: 0; }
 
-.strength-tile h2 { font-size: clamp(12px,3.45vw,18px); }
+@media(min-width:480px) {
+ .today-tile, .today-tile + .today-tile { grid-template-columns:auto minmax(0,1fr); min-height:82px; padding:12px 30px 12px 12px; gap:10px; }
+ .today-tile .tile-arrow { top:50%; transform:translateY(-50%); }
+}
+.skills-title { padding:12px 13px; background:#edf5ff; border:1px solid #b6d2f2; border-left:4px solid #245d96; border-radius:9px; }
 
 .exercise-picker-actions { margin-top: 0; }
 .exercise-picker-actions .text-link { border: 0; background: none; text-align: left; padding: 0 5px; }

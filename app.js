@@ -506,7 +506,7 @@ function oneToOne(){
 }
 let trainingView='all';
 function trainingTabs(active){
- const tabs=[['history','Activity','gym'],['programmes','Programmes','gym/programmes'],['progress','Progress','gym/progress']];
+ const tabs=[['history','Sessions','gym'],['programmes','Programmes','gym/programmes'],['progress','Progress','gym/progress']];
  return '<nav class="gym-tabs" aria-label="Strength and conditioning sections">'+tabs.map(([key,label,path])=>
   '<a class="gym-tab" href="#'+path+'" '+(key===active?'aria-current="page"':'')+'>'+e(label)+'</a>').join('')+'</nav>';
 }
@@ -997,7 +997,7 @@ function savedResults(logId,source){
  const origin=sessionOrigin(plan);
  const block=plan.programmeId===conditioningBlock.id;
  const next=block?blockPlans().find(item=>!completedBlockSession(item)):null;
- return (source==='today'?back('today','Back to Home'):back('gym','Back to Activity'))+
+ return (source==='today'?back('today','Back to Home'):back('gym','Back to Sessions'))+
  compactHeader(gymSession?'Gym results':'Sprint results',gymSession?'train':'bolt',gymSession?'gym-tile':'skills-tile',null,plan.title+' · '+resultLoggedAt.format(log.at))+
  '<div class="player-log-status">'+tag(playerLogLabel(plan,log),log.status==='partial'?'attention':'good')+partialGymSummary(plan,log)+'</div>'+
  '<section class="section">'+(groups.size?resultSection(gymSession?'gym-chart':'sprint-chart','Your graph',groups,'',log.id):
@@ -1016,8 +1016,8 @@ function progress(origin){
   return '<a class="practice-skill" '+skillRowAttributes(aspect,'skills')+'><span><strong>'+e(skillName(aspect))+'</strong>'+
    '<small>'+e(cue||factors[aspect])+'</small></span>'+icon('arrow',15)+'</a>';
  }).join('');
- return '<h1 class="page-title skills-title">Skills</h1>'+
- '<section class="section skill-position-section" aria-labelledby="position-skills"><h2 class="section-title block-title" id="position-skills">'+e(positionSkills.length?'Practise as '+(/^[aeiou]/i.test(position)?'an ':'a ')+position.toLowerCase():'Practise for your position')+'</h2>'+
+ return '<h1 class="page-title skills-title">Rugby skills</h1>'+
+ '<section class="section skill-position-section" aria-labelledby="position-skills"><h2 class="section-title block-title" id="position-skills">'+e(positionSkills.length?position+' skills':'Your rugby skills')+'</h2>'+
  (tip?'<p class="details skill-position-tip">'+e(tip)+'</p>':'')+
  (practice?'<div class="card position-skills">'+practice+'</div>':
   '<p class="mini">Ask your coach which position to work on.</p>')+
@@ -1154,7 +1154,7 @@ function session(id,origin,attempt){
   '<p class="session-state" data-session-count>'+sessionLogCount(plan,entries)+' of '+plan.items.length+' logged or skipped</p>';
  const gymSession=isGym(plan);
  const backRoute=['today','gym','field','fitness','train'].includes(origin)?origin:sessionOrigin(plan);
- const backLabel={today:'Home',gym:'Back to Gym',field:'Back to Pitch sessions',fitness:'Back to Speed & fitness',train:'Back to Training'}[backRoute];
+ const backLabel={today:'Home',gym:'Back to Sessions',field:'Back to Pitch sessions',fitness:'Back to Speed & fitness',train:'Back to Training'}[backRoute];
  const historyFilter={ 'gym-history':'all','gym-history-gym':'gym','gym-history-fitness':'fitness' }[origin];
  const returnLink=historyFilter?back('gym/history/'+historyFilter+(saved?'/'+saved.id:''),'Back to History'):back(backRoute,backLabel);
  return returnLink+compactHeader(plan.title,gymSession?'train':'bolt',gymSession?'gym-tile':'skills-tile',null,plan.personal?'My gym session':plan.duration+' min')+banner+
@@ -2071,7 +2071,7 @@ function render(focus=false){
  if(role==='player'&&!['today','session','results','skill','training-results','one-calendar'].includes(name)){
   if(name==='one-to-one')returnLink=back('coach-feedback','Back to Coach feedback');
   else if(name==='gym-builder')returnLink=back('gym/add','Back to Add a session');
-  else if(name==='gym'&&arg==='add')returnLink=back('gym','Back to Activity');
+  else if(name==='gym'&&arg==='add')returnLink=back('gym','Back to Sessions');
   else if(name==='field')returnLink=back('skills','Back to Skills');
   else if(name==='profile'&&arg==='edit')returnLink=back('profile','Back to Profile');
   else if(['skills','progress'].includes(name)&&arg==='profile')returnLink=back('profile','Back to Profile');
